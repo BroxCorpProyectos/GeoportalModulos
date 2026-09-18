@@ -13,7 +13,7 @@ const CONFIG = {
      */
 
     API_URL:
-        "PEGAR_AQUI_URL_DE_APPS_SCRIPT",
+        "https://script.google.com/macros/s/AKfycbz-VppcKb5Gm0AA13vpO-78coB4aKfANNljTOWcYfUL3FtUJcnqbr8PvEEuxIxNEj2eyQ/exec",
 
 
     /*
