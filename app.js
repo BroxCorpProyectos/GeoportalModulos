@@ -116,7 +116,8 @@ function inicializarMapa() {
             "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             {
                 maxZoom: 22,
-
+                maxNativeZoom: 19,
+    
                 attribution:
                     "Tiles © Esri"
             }
