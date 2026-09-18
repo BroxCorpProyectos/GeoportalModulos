@@ -2,147 +2,251 @@
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <title>Geoportal de Módulos</title>
+    <title>
+        Geoportal de Módulos
+    </title>
 
-    <!-- Leaflet -->
+
+    <!-- =====================================================
+         LEAFLET
+    ====================================================== -->
+
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
 
-    <!-- Iconos -->
+
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-    <!-- CSS propio -->
-    <link rel="stylesheet" href="style.css">
+
+    <!-- =====================================================
+         CSS PROPIO
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="./style.css"
+    >
+
 </head>
+
 
 <body>
 
-    <!-- CABECERA -->
+
+<!-- ========================================================
+     CONTENEDOR PRINCIPAL
+========================================================= -->
+
+<div class="app">
+
+
+    <!-- ====================================================
+         BARRA SUPERIOR
+    ===================================================== -->
 
     <header class="topbar">
 
-        <div class="brand">
+        <div class="logo">
 
-            <div class="brand-icon">
+            <div class="logo-icon">
+
                 <i class="fa-solid fa-map-location-dot"></i>
+
             </div>
 
             <div>
-                <h1>Geoportal de Módulos</h1>
-                <span>Huaripampa Bajo y Shiquip</span>
+
+                <div class="titulo">
+                    Geoportal de Módulos
+                </div>
+
+                <div class="subtitulo">
+                    Huaripampa Bajo y Shiquip
+                </div>
+
             </div>
 
         </div>
 
-        <button id="btnMenu" class="menu-button">
-            <i class="fa-solid fa-bars"></i>
-        </button>
+
+        <div class="topbar-actions">
+
+            <span
+                id="estado-conexion"
+                class="conexion"
+            >
+
+                <i class="fa-solid fa-circle"></i>
+
+                Conectando...
+
+            </span>
+
+        </div>
 
     </header>
 
 
-    <!-- CONTENEDOR PRINCIPAL -->
 
-    <main class="layout">
+    <!-- ====================================================
+         CONTENIDO
+    ===================================================== -->
 
-        <!-- PANEL LATERAL -->
-
-        <aside id="sidebar" class="sidebar">
-
-            <div class="sidebar-header">
-
-                <h2>
-                    <i class="fa-solid fa-layer-group"></i>
-                    Módulos
-                </h2>
-
-                <button id="btnCerrarPanel">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-
-            </div>
+    <main class="contenido">
 
 
-            <!-- BUSCADOR -->
+        <!-- =================================================
+             PANEL LATERAL
+        ================================================== -->
 
-            <div class="search-box">
+        <aside class="sidebar">
+
+
+            <!-- =============================================
+                 BUSCADOR
+            ============================================== -->
+
+            <div class="busqueda">
 
                 <i class="fa-solid fa-magnifying-glass"></i>
 
                 <input
                     type="text"
-                    id="searchInput"
+                    id="buscador"
                     placeholder="Buscar módulo o beneficiario..."
+                    autocomplete="off"
                 >
 
             </div>
 
 
-            <!-- CONTADORES -->
+            <!-- =============================================
+                 BOTÓN ACTUALIZAR
+            ============================================== -->
 
-            <section class="dashboard">
+            <button
+                id="btn-actualizar"
+                class="btn-actualizar"
+            >
 
-                <div class="stat-card total">
+                <i class="fa-solid fa-arrows-rotate"></i>
 
-                    <div class="stat-icon">
+                Actualizar información
+
+            </button>
+
+
+            <!-- =============================================
+                 ESTADÍSTICAS
+            ============================================== -->
+
+            <section class="estadisticas">
+
+
+                <div class="estadistica">
+
+                    <div class="estadistica-icon total">
+
                         <i class="fa-solid fa-house"></i>
+
                     </div>
 
                     <div>
-                        <strong id="totalModulos">0</strong>
-                        <span>Módulos</span>
+
+                        <strong id="total-modulos">
+                            0
+                        </strong>
+
+                        <span>
+                            Módulos
+                        </span>
+
                     </div>
 
                 </div>
 
 
-                <div class="stat-card apto">
+                <div class="estadistica">
 
-                    <div class="stat-icon">
+                    <div class="estadistica-icon apto">
+
                         <i class="fa-solid fa-circle"></i>
+
                     </div>
 
                     <div>
-                        <strong id="totalAptos">0</strong>
-                        <span>Aptos</span>
+
+                        <strong id="total-aptos">
+                            0
+                        </strong>
+
+                        <span>
+                            Aptos
+                        </span>
+
                     </div>
 
                 </div>
 
 
-                <div class="stat-card proceso">
+                <div class="estadistica">
 
-                    <div class="stat-icon">
+                    <div class="estadistica-icon proceso">
+
                         <i class="fa-solid fa-circle"></i>
+
                     </div>
 
                     <div>
-                        <strong id="totalProceso">0</strong>
-                        <span>En proceso</span>
+
+                        <strong id="total-proceso">
+                            0
+                        </strong>
+
+                        <span>
+                            En proceso
+                        </span>
+
                     </div>
 
                 </div>
 
 
-                <div class="stat-card intervenido">
+                <div class="estadistica">
 
-                    <div class="stat-icon">
+                    <div class="estadistica-icon intervenido">
+
                         <i class="fa-solid fa-circle"></i>
+
                     </div>
 
                     <div>
-                        <strong id="totalIntervenidos">0</strong>
-                        <span>Intervenidos</span>
+
+                        <strong id="total-intervenidos">
+                            0
+                        </strong>
+
+                        <span>
+                            Intervenidos
+                        </span>
+
                     </div>
 
                 </div>
@@ -150,141 +254,336 @@
             </section>
 
 
-            <!-- LEYENDA -->
+            <!-- =============================================
+                 LEYENDA
+            ============================================== -->
 
-            <section class="legend">
+            <section class="seccion">
 
-                <h3>Estado</h3>
+                <div class="seccion-titulo">
 
-                <div class="legend-item">
-
-                    <span class="legend-dot red"></span>
-
-                    <span>Apto para intervenir</span>
+                    ESTADO
 
                 </div>
 
 
-                <div class="legend-item">
+                <div class="leyenda-item">
 
-                    <span class="legend-dot blue"></span>
+                    <span class="leyenda-color rojo"></span>
 
-                    <span>En proceso</span>
+                    <span>
+                        Apto para intervenir
+                    </span>
 
                 </div>
 
 
-                <div class="legend-item">
+                <div class="leyenda-item">
 
-                    <span class="legend-dot green"></span>
+                    <span class="leyenda-color azul"></span>
 
-                    <span>Intervenido</span>
+                    <span>
+                        En proceso
+                    </span>
+
+                </div>
+
+
+                <div class="leyenda-item">
+
+                    <span class="leyenda-color verde"></span>
+
+                    <span>
+                        Intervenido
+                    </span>
 
                 </div>
 
             </section>
 
 
-            <!-- LISTA -->
+            <!-- =============================================
+                 LISTADO
+            ============================================== -->
 
-            <section class="module-list-container">
+            <section class="seccion listado-section">
 
-                <div class="list-title">
+                <div class="listado-header">
 
-                    <h3>Listado</h3>
+                    <span>
+                        MÓDULOS
+                    </span>
 
-                    <span id="resultCount">0</span>
+                    <span
+                        id="contador-listado"
+                        class="contador"
+                    >
+                        0
+                    </span>
 
                 </div>
 
-                <div id="moduleList" class="module-list"></div>
+
+                <div
+                    id="lista-modulos"
+                    class="lista-modulos"
+                >
+
+                    <div class="cargando">
+
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+
+                        Cargando módulos...
+
+                    </div>
+
+                </div>
 
             </section>
+
 
         </aside>
 
 
-        <!-- MAPA -->
 
-        <section class="map-container">
+        <!-- =================================================
+             MAPA
+        ================================================== -->
 
-            <div id="map"></div>
+        <section class="mapa-contenedor">
+
+            <div
+                id="map"
+                class="map"
+            ></div>
 
 
-            <!-- BOTONES MAPA -->
+            <!-- =============================================
+                 BOTÓN TABLA
+            ============================================== -->
 
-            <div class="map-tools">
+            <button
+                id="btn-tabla"
+                class="mapa-boton tabla-boton"
+                title="Mostrar tabla de beneficiarios"
+            >
 
-                <button id="btnUbicacion"
-                        title="Mi ubicación">
+                <i class="fa-solid fa-table"></i>
 
-                    <i class="fa-solid fa-location-crosshairs"></i>
+            </button>
+
+
+            <!-- =============================================
+                 PANEL DE DETALLE
+            ============================================== -->
+
+            <div
+                id="detalle-modulo"
+                class="detalle-panel"
+            >
+
+                <button
+                    id="cerrar-detalle"
+                    class="cerrar-detalle"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
 
                 </button>
 
 
-                <button id="btnExtender"
-                        title="Mostrar todos">
+                <div class="detalle-vacio">
 
-                    <i class="fa-solid fa-expand"></i>
+                    <i class="fa-solid fa-location-dot"></i>
 
-                </button>
+                    <p>
+                        Selecciona un módulo en el mapa
+                    </p>
 
-            </div>
-
-
-            <!-- CARGANDO -->
-
-            <div id="loading" class="loading">
-
-                <div class="loader"></div>
-
-                <span>Cargando módulos...</span>
+                </div>
 
             </div>
 
 
-            <!-- MENSAJE -->
+            <!-- =============================================
+                 INDICADOR DE CARGA
+            ============================================== -->
 
-            <div id="toast" class="toast"></div>
+            <div
+                id="cargando-mapa"
+                class="cargando-mapa"
+            >
+
+                <i class="fa-solid fa-spinner fa-spin"></i>
+
+                <span>
+                    Cargando información...
+                </span>
+
+            </div>
 
         </section>
+
 
     </main>
 
 
-    <!-- PANEL DETALLE -->
+</div>
 
-    <div id="detailOverlay" class="detail-overlay">
 
-        <div class="detail-panel">
+
+<!-- ========================================================
+     MODAL TABLA DE BENEFICIARIOS
+========================================================= -->
+
+<div
+    id="modal-tabla"
+    class="modal"
+>
+
+    <div class="modal-contenido">
+
+
+        <div class="modal-header">
+
+            <div>
+
+                <h2>
+                    Beneficiarios
+                </h2>
+
+                <span>
+                    Huaripampa Bajo y Shiquip
+                </span>
+
+            </div>
+
 
             <button
-                id="btnCerrarDetalle"
-                class="detail-close">
+                id="cerrar-modal"
+                class="cerrar-modal"
+            >
 
                 <i class="fa-solid fa-xmark"></i>
 
             </button>
 
+        </div>
 
-            <div id="detailContent"></div>
+
+        <!-- =============================================
+             BUSCAR EN TABLA
+        ============================================== -->
+
+        <div class="tabla-toolbar">
+
+            <div class="tabla-buscador">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="buscador-tabla"
+                    placeholder="Buscar beneficiario..."
+                >
+
+            </div>
 
         </div>
 
+
+        <!-- =============================================
+             TABLA
+        ============================================== -->
+
+        <div class="tabla-scroll">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Módulo
+                        </th>
+
+                        <th>
+                            Beneficiario
+                        </th>
+
+                        <th>
+                            Sector
+                        </th>
+
+                        <th>
+                            Tipo
+                        </th>
+
+                        <th>
+                            Estado
+                        </th>
+
+                        <th>
+                            Avance
+                        </th>
+
+                        <th>
+                            Informe
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody
+                    id="tabla-beneficiarios"
+                >
+
+                    <tr>
+
+                        <td
+                            colspan="7"
+                            class="tabla-cargando"
+                        >
+
+                            Cargando...
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
     </div>
 
-
-    <!-- Leaflet -->
-
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    </script>
+</div>
 
 
-    <!-- Aplicación -->
 
-    <script src="app.js"></script>
+<!-- ========================================================
+     LEAFLET JS
+========================================================= -->
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
+
+<!-- ========================================================
+     JAVASCRIPT PROPIO
+========================================================= -->
+
+<script
+    src="./app.js"
+></script>
+
 
 </body>
 
