@@ -46,7 +46,6 @@ let capaSatelite = null;
 let capaCalles = null;
 
 
-
 // ============================================================
 // INICIO
 // ============================================================
@@ -109,61 +108,56 @@ function inicializarMapa() {
     // --------------------------------------------------------
     // SATÉLITE
     // --------------------------------------------------------
-    
+
     const MAPTILER_KEY = "66uMzDVzttzlPmbt4O6o";
+
 
     capaSatelite =
         L.tileLayer(
             `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
             {
                 maxZoom: 22,
-    
+
                 attribution:
                     '&copy; MapTiler &copy; OpenStreetMap contributors'
             }
         );
 
 
-
     // --------------------------------------------------------
     // CALLES
+    // --------------------------------------------------------
+    // Se utiliza el endpoint principal de OpenStreetMap.
     // --------------------------------------------------------
 
     capaCalles =
         L.tileLayer(
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             {
-                maxZoom: 22,
+                maxZoom: 19,
 
                 attribution:
-                    "© OpenStreetMap contributors"
+                    "&copy; OpenStreetMap contributors"
             }
         );
 
 
+    // --------------------------------------------------------
+    // CAPA INICIAL
+    // --------------------------------------------------------
+
     capaSatelite.addTo(mapa);
 
+
     // --------------------------------------------------------
-    // NOTA: el selector de capas nativo de Leaflet se reemplazó
-    // por el panel de herramientas propio (más grande y táctil
-    // en celular). Ver cambiarCapaBase() y configurarHerramientas().
+    // ESTADO INICIAL DE LOS BOTONES
     // --------------------------------------------------------
-
-}
-
-
-// ============================================================
-// CAMBIAR CAPA BASE (satélite / calles)
-// ============================================================
-
-function cambiarCapaBase(
-    capa
-) {
 
     const botonSatelite =
         document.getElementById(
             "capa-satelite"
         );
+
 
     const botonCalles =
         document.getElementById(
@@ -171,47 +165,219 @@ function cambiarCapaBase(
         );
 
 
+    if (botonSatelite) {
+
+        botonSatelite.classList.add(
+            "activa"
+        );
+
+    }
+
+
+    if (botonCalles) {
+
+        botonCalles.classList.remove(
+            "activa"
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // NOTA:
+    // El selector nativo de Leaflet se reemplazó por el panel
+    // de herramientas propio.
+    // --------------------------------------------------------
+
+}
+
+
+// ============================================================
+// CAMBIAR CAPA BASE
+// SATÉLITE / CALLES
+// ============================================================
+
+function cambiarCapaBase(
+    capa
+) {
+
+    // --------------------------------------------------------
+    // Comprobar que el mapa y las capas existen
+    // --------------------------------------------------------
+
+    if (
+        !mapa ||
+        !capaSatelite ||
+        !capaCalles
+    ) {
+
+        console.error(
+            "Mapa o capas base no están inicializados."
+        );
+
+        return;
+
+    }
+
+
+    const botonSatelite =
+        document.getElementById(
+            "capa-satelite"
+        );
+
+
+    const botonCalles =
+        document.getElementById(
+            "capa-calles"
+        );
+
+
+    // ========================================================
+    // CALLES
+    // ========================================================
+
     if (
         capa === "calles"
     ) {
 
-        if (mapa.hasLayer(capaSatelite)) {
+        // ----------------------------------------------------
+        // Quitar satélite
+        // ----------------------------------------------------
 
-            mapa.removeLayer(capaSatelite);
+        if (
+            mapa.hasLayer(
+                capaSatelite
+            )
+        ) {
+
+            mapa.removeLayer(
+                capaSatelite
+            );
 
         }
 
-        if (!mapa.hasLayer(capaCalles)) {
 
-            capaCalles.addTo(mapa);
+        // ----------------------------------------------------
+        // Agregar calles
+        // ----------------------------------------------------
+
+        if (
+            !mapa.hasLayer(
+                capaCalles
+            )
+        ) {
+
+            capaCalles.addTo(
+                mapa
+            );
 
         }
 
 
-        if (botonCalles) botonCalles.classList.add("activa");
+        // ----------------------------------------------------
+        // Actualizar botones
+        // ----------------------------------------------------
 
-        if (botonSatelite) botonSatelite.classList.remove("activa");
+        if (botonCalles) {
+
+            botonCalles.classList.add(
+                "activa"
+            );
+
+        }
+
+
+        if (botonSatelite) {
+
+            botonSatelite.classList.remove(
+                "activa"
+            );
+
+        }
 
     }
+
+
+    // ========================================================
+    // SATÉLITE
+    // ========================================================
+
     else {
 
-        if (mapa.hasLayer(capaCalles)) {
+        // ----------------------------------------------------
+        // Quitar calles
+        // ----------------------------------------------------
 
-            mapa.removeLayer(capaCalles);
+        if (
+            mapa.hasLayer(
+                capaCalles
+            )
+        ) {
+
+            mapa.removeLayer(
+                capaCalles
+            );
 
         }
 
-        if (!mapa.hasLayer(capaSatelite)) {
 
-            capaSatelite.addTo(mapa);
+        // ----------------------------------------------------
+        // Agregar satélite
+        // ----------------------------------------------------
+
+        if (
+            !mapa.hasLayer(
+                capaSatelite
+            )
+        ) {
+
+            capaSatelite.addTo(
+                mapa
+            );
 
         }
 
-        if (botonSatelite) botonSatelite.classList.add("activa");
 
-        if (botonCalles) botonCalles.classList.remove("activa");
+        // ----------------------------------------------------
+        // Actualizar botones
+        // ----------------------------------------------------
+
+        if (botonSatelite) {
+
+            botonSatelite.classList.add(
+                "activa"
+            );
+
+        }
+
+
+        if (botonCalles) {
+
+            botonCalles.classList.remove(
+                "activa"
+            );
+
+        }
 
     }
+
+
+    // --------------------------------------------------------
+    // Forzar actualización visual del mapa
+    // --------------------------------------------------------
+
+    setTimeout(
+        function () {
+
+            if (mapa) {
+
+                mapa.invalidateSize();
+
+            }
+
+        },
+        100
+    );
 
 }
 
@@ -382,7 +548,7 @@ function configurarEventos() {
 
 
     // --------------------------------------------------------
-    // MENÚ (SIDEBAR) EN CELULAR
+    // MENÚ SIDEBAR EN CELULAR
     // --------------------------------------------------------
 
     const botonMenu =
@@ -390,10 +556,12 @@ function configurarEventos() {
             "btn-menu"
         );
 
+
     const sidebar =
         document.querySelector(
             ".sidebar"
         );
+
 
     const backdrop =
         document.getElementById(
@@ -401,15 +569,23 @@ function configurarEventos() {
         );
 
 
-    if (botonMenu && sidebar && backdrop) {
+    if (
+        botonMenu &&
+        sidebar &&
+        backdrop
+    ) {
 
         botonMenu.addEventListener(
             "click",
             function () {
 
-                sidebar.classList.toggle("visible");
+                sidebar.classList.toggle(
+                    "visible"
+                );
 
-                backdrop.classList.toggle("visible");
+                backdrop.classList.toggle(
+                    "visible"
+                );
 
             }
         );
@@ -419,9 +595,13 @@ function configurarEventos() {
             "click",
             function () {
 
-                sidebar.classList.remove("visible");
+                sidebar.classList.remove(
+                    "visible"
+                );
 
-                backdrop.classList.remove("visible");
+                backdrop.classList.remove(
+                    "visible"
+                );
 
             }
         );
@@ -430,7 +610,7 @@ function configurarEventos() {
 
 
     // --------------------------------------------------------
-    // PANEL DE HERRAMIENTAS DEL MAPA (capas + tabla)
+    // PANEL DE HERRAMIENTAS DEL MAPA
     // --------------------------------------------------------
 
     const botonHerramientas =
@@ -438,21 +618,29 @@ function configurarEventos() {
             "btn-toggle-herramientas"
         );
 
+
     const panelHerramientas =
         document.getElementById(
             "panel-herramientas"
         );
 
 
-    if (botonHerramientas && panelHerramientas) {
+    if (
+        botonHerramientas &&
+        panelHerramientas
+    ) {
 
         botonHerramientas.addEventListener(
             "click",
             function () {
 
-                panelHerramientas.classList.toggle("visible");
+                panelHerramientas.classList.toggle(
+                    "visible"
+                );
 
-                botonHerramientas.classList.toggle("activo");
+                botonHerramientas.classList.toggle(
+                    "activo"
+                );
 
             }
         );
@@ -460,10 +648,19 @@ function configurarEventos() {
     }
 
 
+    // --------------------------------------------------------
+    // BOTÓN SATÉLITE
+    // --------------------------------------------------------
+
     const capaSateliteBtn =
         document.getElementById(
             "capa-satelite"
         );
+
+
+    // --------------------------------------------------------
+    // BOTÓN CALLES
+    // --------------------------------------------------------
 
     const capaCallesBtn =
         document.getElementById(
@@ -477,7 +674,9 @@ function configurarEventos() {
             "click",
             function () {
 
-                cambiarCapaBase("satelite");
+                cambiarCapaBase(
+                    "satelite"
+                );
 
             }
         );
@@ -491,7 +690,9 @@ function configurarEventos() {
             "click",
             function () {
 
-                cambiarCapaBase("calles");
+                cambiarCapaBase(
+                    "calles"
+                );
 
             }
         );
@@ -619,11 +820,6 @@ async function cargarGeoJSON() {
 
 async function cargarGoogleScript() {
 
-
-    // --------------------------------------------------------
-    // Comprobar URL
-    // --------------------------------------------------------
-
     if (
         !GOOGLE_SCRIPT_URL ||
         GOOGLE_SCRIPT_URL.includes(
@@ -731,10 +927,6 @@ async function cargarGoogleScript() {
             [];
 
 
-        // ----------------------------------------------------
-        // INDEXAR INFORMACIÓN
-        // ----------------------------------------------------
-
         datosAtributivos = {};
 
 
@@ -783,10 +975,6 @@ async function cargarGoogleScript() {
         );
 
 
-        // ----------------------------------------------------
-        // ACTUALIZAR MAPA
-        // ----------------------------------------------------
-
         if (datosGeoJSON) {
 
             mostrarModulos(
@@ -805,10 +993,6 @@ async function cargarGoogleScript() {
 
         }
 
-
-        // ----------------------------------------------------
-        // ACTUALIZAR TABLA
-        // ----------------------------------------------------
 
         actualizarTabla();
 
@@ -865,7 +1049,6 @@ async function cargarGoogleScript() {
 function mostrarModulos(
     geojson
 ) {
-
 
     if (capaModulos) {
 
@@ -965,10 +1148,6 @@ function mostrarModulos(
         mapa
     );
 
-
-    // --------------------------------------------------------
-    // EXTENSIÓN DEL MAPA
-    // --------------------------------------------------------
 
     const bounds =
         capaModulos.getBounds();
@@ -1159,12 +1338,6 @@ function normalizarEstado(
     estado
 ) {
 
-    // --------------------------------------------------------
-    // Sin dato todavía: el módulo aún no fue registrado
-    // (16 de los 27 módulos actuales están así, por eso NO
-    // se puede asumir "Apto" por defecto)
-    // --------------------------------------------------------
-
     if (
         !estado ||
         !String(estado).trim()
@@ -1180,12 +1353,6 @@ function normalizarEstado(
             .toLowerCase()
             .trim();
 
-
-    // --------------------------------------------------------
-    // IMPORTANTE: "no apto" debe comprobarse ANTES que "apto",
-    // porque "no apto" también contiene la subcadena "apto" y
-    // antes quedaba mal clasificado como "Apto"
-    // --------------------------------------------------------
 
     if (
         texto.includes(
@@ -1845,11 +2012,6 @@ function actualizarEstadisticas(
     let total = 0;
 
 
-    // --------------------------------------------------------
-    // IMPORTANTE:
-    // Solo cuenta los módulos N01-N27
-    // --------------------------------------------------------
-
     geojson.features.forEach(
         feature => {
 
@@ -2162,10 +2324,6 @@ function enfocarFeature(
     );
 
 
-    // --------------------------------------------------------
-    // En celular, cerrar el menú lateral al enfocar un módulo
-    // --------------------------------------------------------
-
     if (
         window.innerWidth <= 650
     ) {
@@ -2175,15 +2333,29 @@ function enfocarFeature(
                 ".sidebar"
             );
 
+
         const backdrop =
             document.getElementById(
                 "sidebar-backdrop"
             );
 
 
-        if (sidebar) sidebar.classList.remove("visible");
+        if (sidebar) {
 
-        if (backdrop) backdrop.classList.remove("visible");
+            sidebar.classList.remove(
+                "visible"
+            );
+
+        }
+
+
+        if (backdrop) {
+
+            backdrop.classList.remove(
+                "visible"
+            );
+
+        }
 
     }
 
