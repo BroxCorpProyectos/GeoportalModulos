@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Geoportal de Módulos</title>
+
+    <!-- Leaflet -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <!-- Iconos -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- CSS propio -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- CABECERA -->
+
+    <header class="topbar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                <i class="fa-solid fa-map-location-dot"></i>
+            </div>
+
+            <div>
+                <h1>Geoportal de Módulos</h1>
+                <span>Huaripampa Bajo y Shiquip</span>
+            </div>
+
+        </div>
+
+        <button id="btnMenu" class="menu-button">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+    </header>
+
+
+    <!-- CONTENEDOR PRINCIPAL -->
+
+    <main class="layout">
+
+        <!-- PANEL LATERAL -->
+
+        <aside id="sidebar" class="sidebar">
+
+            <div class="sidebar-header">
+
+                <h2>
+                    <i class="fa-solid fa-layer-group"></i>
+                    Módulos
+                </h2>
+
+                <button id="btnCerrarPanel">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+
+            <!-- BUSCADOR -->
+
+            <div class="search-box">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Buscar módulo o beneficiario..."
+                >
+
+            </div>
+
+
+            <!-- CONTADORES -->
+
+            <section class="dashboard">
+
+                <div class="stat-card total">
+
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-house"></i>
+                    </div>
+
+                    <div>
+                        <strong id="totalModulos">0</strong>
+                        <span>Módulos</span>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card apto">
+
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-circle"></i>
+                    </div>
+
+                    <div>
+                        <strong id="totalAptos">0</strong>
+                        <span>Aptos</span>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card proceso">
+
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-circle"></i>
+                    </div>
+
+                    <div>
+                        <strong id="totalProceso">0</strong>
+                        <span>En proceso</span>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card intervenido">
+
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-circle"></i>
+                    </div>
+
+                    <div>
+                        <strong id="totalIntervenidos">0</strong>
+                        <span>Intervenidos</span>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- LEYENDA -->
+
+            <section class="legend">
+
+                <h3>Estado</h3>
+
+                <div class="legend-item">
+
+                    <span class="legend-dot red"></span>
+
+                    <span>Apto para intervenir</span>
+
+                </div>
+
+
+                <div class="legend-item">
+
+                    <span class="legend-dot blue"></span>
+
+                    <span>En proceso</span>
+
+                </div>
+
+
+                <div class="legend-item">
+
+                    <span class="legend-dot green"></span>
+
+                    <span>Intervenido</span>
+
+                </div>
+
+            </section>
+
+
+            <!-- LISTA -->
+
+            <section class="module-list-container">
+
+                <div class="list-title">
+
+                    <h3>Listado</h3>
+
+                    <span id="resultCount">0</span>
+
+                </div>
+
+                <div id="moduleList" class="module-list"></div>
+
+            </section>
+
+        </aside>
+
+
+        <!-- MAPA -->
+
+        <section class="map-container">
+
+            <div id="map"></div>
+
+
+            <!-- BOTONES MAPA -->
+
+            <div class="map-tools">
+
+                <button id="btnUbicacion"
+                        title="Mi ubicación">
+
+                    <i class="fa-solid fa-location-crosshairs"></i>
+
+                </button>
+
+
+                <button id="btnExtender"
+                        title="Mostrar todos">
+
+                    <i class="fa-solid fa-expand"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- CARGANDO -->
+
+            <div id="loading" class="loading">
+
+                <div class="loader"></div>
+
+                <span>Cargando módulos...</span>
+
+            </div>
+
+
+            <!-- MENSAJE -->
+
+            <div id="toast" class="toast"></div>
+
+        </section>
+
+    </main>
+
+
+    <!-- PANEL DETALLE -->
+
+    <div id="detailOverlay" class="detail-overlay">
+
+        <div class="detail-panel">
+
+            <button
+                id="btnCerrarDetalle"
+                class="detail-close">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+
+            <div id="detailContent"></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Leaflet -->
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
+
+
+    <!-- Aplicación -->
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
