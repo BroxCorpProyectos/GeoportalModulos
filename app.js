@@ -1,713 +1,1148 @@
-/* =========================================================
-   CONFIGURACIÓN
-========================================================= */
-
-const CONFIG = {
-
-    /*
-     * PEGAR AQUÍ LA URL DEL WEB APP DE GOOGLE APPS SCRIPT
-     *
-     * Ejemplo:
-     *
-     * https://script.google.com/macros/s/XXXXXXXX/exec
-     */
-
-    API_URL:
-        "https://script.google.com/macros/s/AKfycbz-VppcKb5Gm0AA13vpO-78coB4aKfANNljTOWcYfUL3FtUJcnqbr8PvEEuxIxNEj2eyQ/exec",
+// ============================================================
+// GEOPORTAL DE MÓDULOS
+// Huaripampa Bajo y Shiquip
+// ============================================================
 
 
-    /*
-     * GeoJSON ubicado en el mismo repositorio
-     */
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
 
-    GEOJSON_URL:
-        "./modulos.geojson",
-
-
-    /*
-     * Centro inicial aproximado
-     */
-
-    MAP_CENTER:
-        [-9.507, -77.148],
-
-    MAP_ZOOM:
-        15
-};
+// GeoJSON en la MISMA carpeta que index.html
+const GEOJSON_URL = "./modulos.geojson";
 
 
-/* =========================================================
-   VARIABLES
-========================================================= */
+// ------------------------------------------------------------
+// IMPORTANTE
+// Pega aquí la URL /exec de tu Google Apps Script
+// ------------------------------------------------------------
 
-let map;
-
-let geojsonLayer;
-
-let moduleData = [];
-
-let moduleFeatures = [];
-
-let markers = [];
-
-let allBounds;
+const GOOGLE_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbz-VppcKb5Gm0AA13vpO-78coB4aKfANNljTOWcYfUL3FtUJcnqbr8PvEEuxIxNEj2eyQ/exec";
 
 
-/* =========================================================
-   INICIO
-========================================================= */
+const MAPA_CENTRO = [
+    -9.5035,
+    -77.1470
+];
+
+const MAPA_ZOOM = 15;
+
+
+// ============================================================
+// VARIABLES
+// ============================================================
+
+let mapa = null;
+
+let capaModulos = null;
+
+let datosGeoJSON = null;
+
+let datosAtributivos = {};
+
+
+// ============================================================
+// INICIO
+// ============================================================
 
 document.addEventListener(
     "DOMContentLoaded",
-    init
+    iniciar
 );
 
 
-async function init() {
+async function iniciar() {
 
-    createMap();
+    inicializarMapa();
 
-    setupEvents();
+    configurarEventos();
 
-    await loadApplication();
+    await cargarGeoJSON();
 
-}
-
-
-/* =========================================================
-   MAPA
-========================================================= */
-
-function createMap() {
-
-    map = L.map("map", {
-
-        zoomControl: true,
-
-        attributionControl: true
-
-    }).setView(
-        CONFIG.MAP_CENTER,
-        CONFIG.MAP_ZOOM
-    );
-
-
-    /*
-     * OpenStreetMap
-     */
-
-    const osm = L.tileLayer(
-
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-
-        {
-
-            maxZoom: 20,
-
-            attribution:
-                '&copy; OpenStreetMap contributors'
-
-        }
-
-    );
-
-
-    /*
-     * Satélite Esri
-     *
-     * No requiere crear una carpeta.
-     */
-
-    const satellite = L.tileLayer(
-
-        "https://server.arcgisonline.com/ArcGIS/rest/services/" +
-        "World_Imagery/MapServer/tile/{z}/{y}/{x}",
-
-        {
-
-            maxZoom: 20,
-
-            attribution:
-                "Tiles &copy; Esri"
-
-        }
-
-    );
-
-
-    satellite.addTo(map);
-
-
-    /*
-     * Control de mapas
-     */
-
-    L.control.layers({
-
-        "Satélite": satellite,
-
-        "Mapa": osm
-
-    }).addTo(map);
+    await cargarGoogleScript();
 
 }
 
 
-/* =========================================================
-   CARGAR APLICACIÓN
-========================================================= */
+// ============================================================
+// INICIALIZAR MAPA
+// ============================================================
 
-async function loadApplication() {
+function inicializarMapa() {
+
+    mapa = L.map(
+        "map",
+        {
+            zoomControl: false
+        }
+    ).setView(
+        MAPA_CENTRO,
+        MAPA_ZOOM
+    );
+
+
+    L.control.zoom({
+        position: "topleft"
+    }).addTo(mapa);
+
+
+    // --------------------------------------------------------
+    // SATÉLITE
+    // --------------------------------------------------------
+
+    const satelite =
+        L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            {
+                maxZoom: 22,
+
+                attribution:
+                    "Tiles © Esri"
+            }
+        );
+
+
+    // --------------------------------------------------------
+    // CALLES
+    // --------------------------------------------------------
+
+    const calles =
+        L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 22,
+
+                attribution:
+                    "© OpenStreetMap contributors"
+            }
+        );
+
+
+    // --------------------------------------------------------
+    // ETIQUETAS
+    // --------------------------------------------------------
+
+    const etiquetas =
+        L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+            {
+                maxZoom: 22,
+
+                attribution:
+                    "Esri"
+            }
+        );
+
+
+    satelite.addTo(mapa);
+
+    etiquetas.addTo(mapa);
+
+
+    // --------------------------------------------------------
+    // CAPAS BASE
+    // --------------------------------------------------------
+
+    L.control.layers(
+        {
+            "Satélite": satelite,
+            "Calles": calles
+        },
+        null,
+        {
+            position: "topright"
+        }
+    ).addTo(mapa);
+
+}
+
+
+// ============================================================
+// EVENTOS
+// ============================================================
+
+function configurarEventos() {
+
+
+    // --------------------------------------------------------
+    // ACTUALIZAR
+    // --------------------------------------------------------
+
+    const botonActualizar =
+        document.getElementById(
+            "btn-actualizar"
+        );
+
+
+    if (botonActualizar) {
+
+        botonActualizar.addEventListener(
+            "click",
+            cargarGoogleScript
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // BUSCADOR
+    // --------------------------------------------------------
+
+    const buscador =
+        document.getElementById(
+            "buscador"
+        );
+
+
+    if (buscador) {
+
+        buscador.addEventListener(
+            "input",
+            function () {
+
+                filtrarModulos(
+                    this.value
+                );
+
+            }
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // CERRAR DETALLE
+    // --------------------------------------------------------
+
+    const cerrarDetalle =
+        document.getElementById(
+            "cerrar-detalle"
+        );
+
+
+    if (cerrarDetalle) {
+
+        cerrarDetalle.addEventListener(
+            "click",
+            cerrarDetalleModulo
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // TABLA
+    // --------------------------------------------------------
+
+    const botonTabla =
+        document.getElementById(
+            "btn-tabla"
+        );
+
+
+    if (botonTabla) {
+
+        botonTabla.addEventListener(
+            "click",
+            abrirTabla
+        );
+
+    }
+
+
+    const cerrarModal =
+        document.getElementById(
+            "cerrar-modal"
+        );
+
+
+    if (cerrarModal) {
+
+        cerrarModal.addEventListener(
+            "click",
+            cerrarTabla
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // BUSCADOR TABLA
+    // --------------------------------------------------------
+
+    const buscadorTabla =
+        document.getElementById(
+            "buscador-tabla"
+        );
+
+
+    if (buscadorTabla) {
+
+        buscadorTabla.addEventListener(
+            "input",
+            function () {
+
+                filtrarTabla(
+                    this.value
+                );
+
+            }
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // CERRAR MODAL AL HACER CLICK FUERA
+    // --------------------------------------------------------
+
+    const modal =
+        document.getElementById(
+            "modal-tabla"
+        );
+
+
+    if (modal) {
+
+        modal.addEventListener(
+            "click",
+            function (event) {
+
+                if (
+                    event.target === modal
+                ) {
+
+                    cerrarTabla();
+
+                }
+
+            }
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// CARGAR GEOJSON
+// ============================================================
+
+async function cargarGeoJSON() {
+
+    mostrarCargaMapa(true);
+
 
     try {
 
-        showLoading(true);
+        console.log(
+            "Cargando GeoJSON:",
+            GEOJSON_URL
+        );
 
 
-        /*
-         * Primero GeoJSON
-         */
+        const respuesta =
+            await fetch(
+                GEOJSON_URL,
+                {
+                    cache: "no-cache"
+                }
+            );
 
-        const geoResponse =
-            await fetch(CONFIG.GEOJSON_URL);
 
-
-        if (!geoResponse.ok) {
+        if (!respuesta.ok) {
 
             throw new Error(
-                "No se pudo cargar el GeoJSON"
+                `No se pudo cargar el GeoJSON. HTTP ${respuesta.status}`
             );
 
         }
 
 
-        const geojson =
-            await geoResponse.json();
+        const datos =
+            await respuesta.json();
 
-
-        /*
-         * Extraemos solamente los módulos N01-N27.
-         */
-
-        moduleFeatures =
-            extractModules(geojson);
-
-
-        /*
-         * Luego intentamos obtener
-         * la información de Google Sheets.
-         */
 
         if (
-            CONFIG.API_URL &&
-            !CONFIG.API_URL.includes(
-                "PEGAR_AQUI"
+            datos.type !==
+            "FeatureCollection"
+        ) {
+
+            throw new Error(
+                "El archivo no es una FeatureCollection GeoJSON."
+            );
+
+        }
+
+
+        if (
+            !Array.isArray(
+                datos.features
             )
         ) {
 
-            try {
-
-                moduleData =
-                    await getModulesFromAPI();
-
-            } catch (error) {
-
-                console.warn(
-                    "No se pudo consultar Apps Script:",
-                    error
-                );
-
-                showToast(
-                    "Se cargó el mapa, pero no se pudo consultar Google Sheets."
-                );
-
-                moduleData = [];
-
-            }
+            throw new Error(
+                "El GeoJSON no contiene features."
+            );
 
         }
 
 
-        /*
-         * Combinar GeoJSON + Sheets
-         */
-
-        moduleFeatures =
-            mergeData(
-                moduleFeatures,
-                moduleData
-            );
+        datosGeoJSON =
+            datos;
 
 
-        /*
-         * Dibujar
-         */
-
-        drawModules();
-
-
-        /*
-         * Lista
-         */
-
-        updateList();
-
-
-        /*
-         * Estadísticas
-         */
-
-        updateStats();
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        showToast(
-            "Error cargando el geoportal."
+        console.log(
+            "GeoJSON cargado:",
+            datos.features.length,
+            "elementos"
         );
 
-    } finally {
 
-        showLoading(false);
+        mostrarModulos(
+            datosGeoJSON
+        );
+
+
+        actualizarEstadisticas(
+            datosGeoJSON
+        );
+
+
+        actualizarListado(
+            datosGeoJSON
+        );
+
+
+    }
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        mostrarError(
+            error.message
+        );
+
+    }
+    finally {
+
+        mostrarCargaMapa(false);
 
     }
 
 }
 
 
-/* =========================================================
-   EXTRAER MÓDULOS
-========================================================= */
+// ============================================================
+// GOOGLE APPS SCRIPT
+// ============================================================
 
-function extractModules(geojson) {
+async function cargarGoogleScript() {
+
+
+    // --------------------------------------------------------
+    // Comprobar URL
+    // --------------------------------------------------------
 
     if (
-        !geojson ||
-        !Array.isArray(geojson.features)
+        !GOOGLE_SCRIPT_URL ||
+        GOOGLE_SCRIPT_URL.includes(
+            "PEGAR_AQUI"
+        )
     ) {
 
-        return [];
+        console.warn(
+            "Google Apps Script todavía no está configurado."
+        );
+
+
+        actualizarConexion(
+            "sin configurar",
+            false
+        );
+
+
+        return;
 
     }
 
 
-    return geojson.features
-        .filter(feature => {
-
-            const name =
-                feature.properties?.Name ||
-                feature.properties?.name ||
-                "";
-
-
-            /*
-             * Reconoce:
-             *
-             * N 01
-             * N1
-             * N° 01
-             * N°01
-             */
-
-            return /^N\s*°?\s*0*\d+$/i.test(
-                name.trim()
-            );
-
-        })
-        .map(feature => {
-
-            const originalName =
-                feature.properties?.Name ||
-                feature.properties?.name ||
-                "";
-
-
-            const number =
-                extractNumber(originalName);
-
-
-            return {
-
-                id:
-                    "N" +
-                    String(number)
-                        .padStart(2, "0"),
-
-                displayName:
-                    "N° " +
-                    String(number)
-                        .padStart(2, "0"),
-
-                feature:
-
-                    feature
-
-            };
-
-        })
-
-        /*
-         * Evitar duplicados.
-         *
-         * Tu GeoJSON contiene:
-         *
-         * N01
-         * N° 01
-         *
-         * etc.
-         */
-
-        .filter(
-            (item, index, array) =>
-                array.findIndex(
-                    x => x.id === item.id
-                ) === index
-        )
-
-        .sort(
-            (a, b) =>
-                numericId(a.id) -
-                numericId(b.id)
-        );
-
-}
-
-
-/* =========================================================
-   EXTRAER NÚMERO
-========================================================= */
-
-function extractNumber(name) {
-
-    const match =
-        name.match(
-            /N\s*°?\s*0*(\d+)/i
+    const boton =
+        document.getElementById(
+            "btn-actualizar"
         );
 
 
-    return match
-        ? Number(match[1])
-        : 0;
+    if (boton) {
 
-}
+        boton.disabled = true;
+
+        boton.innerHTML =
+            `
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Actualizando...
+            `;
+
+    }
 
 
-function numericId(id) {
-
-    return Number(
-        id.replace("N", "")
+    actualizarConexion(
+        "actualizando",
+        false
     );
 
+
+    try {
+
+        const url =
+            GOOGLE_SCRIPT_URL +
+            "?accion=modulos&_=" +
+            Date.now();
+
+
+        console.log(
+            "Consultando Google Apps Script..."
+        );
+
+
+        const respuesta =
+            await fetch(
+                url,
+                {
+                    method: "GET",
+                    cache: "no-cache"
+                }
+            );
+
+
+        if (!respuesta.ok) {
+
+            throw new Error(
+                `Google Apps Script respondió HTTP ${respuesta.status}`
+            );
+
+        }
+
+
+        const datos =
+            await respuesta.json();
+
+
+        console.log(
+            "Respuesta Google Apps Script:",
+            datos
+        );
+
+
+        if (
+            datos.ok === false
+        ) {
+
+            throw new Error(
+                datos.mensaje ||
+                "Google Apps Script devolvió un error."
+            );
+
+        }
+
+
+        const registros =
+            datos.data ||
+            [];
+
+
+        // ----------------------------------------------------
+        // INDEXAR INFORMACIÓN
+        // ----------------------------------------------------
+
+        datosAtributivos = {};
+
+
+        registros.forEach(
+            registro => {
+
+                const modulo =
+                    registro.Modulo ||
+                    registro.modulo ||
+                    registro.NAME ||
+                    registro.Name ||
+                    registro.name;
+
+
+                if (!modulo) {
+
+                    return;
+
+                }
+
+
+                const clave =
+                    normalizarNombreModulo(
+                        modulo
+                    );
+
+
+                datosAtributivos[
+                    clave
+                ] = registro;
+
+            }
+        );
+
+
+        console.log(
+            "Registros atributivos:",
+            Object.keys(
+                datosAtributivos
+            ).length
+        );
+
+
+        // ----------------------------------------------------
+        // ACTUALIZAR MAPA
+        // ----------------------------------------------------
+
+        if (datosGeoJSON) {
+
+            mostrarModulos(
+                datosGeoJSON
+            );
+
+
+            actualizarEstadisticas(
+                datosGeoJSON
+            );
+
+
+            actualizarListado(
+                datosGeoJSON
+            );
+
+        }
+
+
+        // ----------------------------------------------------
+        // ACTUALIZAR TABLA
+        // ----------------------------------------------------
+
+        actualizarTabla();
+
+
+        actualizarConexion(
+            `${registros.length} registros`,
+            true
+        );
+
+
+    }
+    catch (error) {
+
+        console.error(
+            "Error Google Apps Script:",
+            error
+        );
+
+
+        actualizarConexion(
+            "error de conexión",
+            false
+        );
+
+
+        mostrarMensaje(
+            "No se pudo conectar con Google Sheets."
+        );
+
+    }
+    finally {
+
+        if (boton) {
+
+            boton.disabled = false;
+
+            boton.innerHTML =
+                `
+                <i class="fa-solid fa-arrows-rotate"></i>
+                Actualizar información
+                `;
+
+        }
+
+    }
+
 }
 
 
-/* =========================================================
-   API GOOGLE APPS SCRIPT
-========================================================= */
+// ============================================================
+// MOSTRAR MÓDULOS
+// ============================================================
 
-function getModulesFromAPI() {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            const callbackName =
-                "geoportalCallback_" +
-                Date.now();
+function mostrarModulos(
+    geojson
+) {
 
 
-            window[callbackName] =
-                function(data) {
+    if (capaModulos) {
 
-                    delete window[
-                        callbackName
-                    ];
+        mapa.removeLayer(
+            capaModulos
+        );
 
-                    script.remove();
+    }
 
-                    if (
-                        data &&
-                        data.success
+
+    capaModulos =
+        L.geoJSON(
+            geojson,
+            {
+
+                pointToLayer:
+                    function (
+                        feature,
+                        latlng
                     ) {
 
-                        resolve(
-                            data.modulos || []
+                        const datos =
+                            obtenerDatosModulo(
+                                feature
+                            );
+
+
+                        return L.circleMarker(
+                            latlng,
+                            {
+
+                                radius: 8,
+
+                                fillColor:
+                                    colorEstado(
+                                        datos.estado
+                                    ),
+
+                                color:
+                                    "#ffffff",
+
+                                weight: 2,
+
+                                opacity: 1,
+
+                                fillOpacity: .95
+
+                            }
                         );
 
-                    } else {
+                    },
 
-                        reject(
-                            new Error(
-                                data?.error ||
-                                "Respuesta inválida"
-                            )
+
+                onEachFeature:
+                    function (
+                        feature,
+                        layer
+                    ) {
+
+                        const datos =
+                            obtenerDatosModulo(
+                                feature
+                            );
+
+
+                        layer.bindPopup(
+                            crearPopup(
+                                feature,
+                                datos
+                            ),
+                            {
+                                maxWidth: 360,
+                                minWidth: 280
+                            }
+                        );
+
+
+                        layer.on(
+                            "click",
+                            function () {
+
+                                mostrarInformacionModulo(
+                                    feature,
+                                    datos
+                                );
+
+                            }
                         );
 
                     }
 
-                };
-
-
-            const script =
-                document.createElement(
-                    "script"
-                );
-
-
-            script.src =
-                CONFIG.API_URL +
-                "?action=modulos" +
-                "&callback=" +
-                callbackName;
-
-
-            script.onerror =
-                function() {
-
-                    delete window[
-                        callbackName
-                    ];
-
-                    script.remove();
-
-                    reject(
-                        new Error(
-                            "No se pudo acceder a Apps Script"
-                        )
-                    );
-
-                };
-
-
-            document.body.appendChild(
-                script
-            );
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   COMBINAR GEOJSON + SHEETS
-========================================================= */
-
-function mergeData(
-    features,
-    sheetsData
-) {
-
-    return features.map(
-        module => {
-
-            const data =
-                sheetsData.find(
-                    item =>
-                        normalizeId(
-                            item.id
-                        ) ===
-                        normalizeId(
-                            module.id
-                        )
-                );
-
-
-            const properties =
-                module.feature
-                    .properties || {};
-
-
-            const description =
-                properties.description ||
-                "";
-
-
-            return {
-
-                ...module,
-
-                beneficiario:
-                    data?.beneficiario ||
-                    parseBeneficiario(
-                        description
-                    ),
-
-                sector:
-                    data?.sector ||
-                    parseSector(
-                        description
-                    ),
-
-                tipo:
-                    data?.tipo ||
-                    parseTipo(
-                        description
-                    ),
-
-                estado:
-                    normalizeStatus(
-                        data?.estado ||
-                        "APTO"
-                    ),
-
-                fecha:
-                    data?.fecha ||
-                    "",
-
-                observaciones:
-                    data?.observaciones ||
-                    "",
-
-                informe:
-                    data?.informe ||
-                    "",
-
-                lat:
-                    module.feature
-                        .geometry
-                        .coordinates[1],
-
-                lng:
-                    module.feature
-                        .geometry
-                        .coordinates[0]
-
-            };
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   NORMALIZAR ID
-========================================================= */
-
-function normalizeId(value) {
-
-    if (!value) return "";
-
-    const number =
-        String(value)
-            .match(/\d+/);
-
-    if (!number) return "";
-
-    return (
-        "N" +
-        String(
-            Number(number[0])
-        ).padStart(2, "0")
-    );
-
-}
-
-
-/* =========================================================
-   ESTADOS
-========================================================= */
-
-function normalizeStatus(status) {
-
-    const value =
-        String(status || "")
-            .trim()
-            .toUpperCase();
-
-
-    if (
-        value.includes("PROCES")
-    ) {
-
-        return "PROCESO";
-
-    }
-
-
-    if (
-        value.includes("INTERVEN")
-    ) {
-
-        return "INTERVENIDO";
-
-    }
-
-
-    if (
-        value.includes("APTO") ||
-        value.includes("APT")
-    ) {
-
-        return "APTO";
-
-    }
-
-
-    return "APTO";
-
-}
-
-
-/* =========================================================
-   PARSER DESCRIPCIÓN
-========================================================= */
-
-function parseBeneficiario(
-    description
-) {
-
-    if (!description)
-        return "";
-
-
-    const match =
-        description.match(
-            /BENEFICIARIO:\s*([^\n]+)/i
+            }
         );
 
 
-    if (match)
-        return match[1].trim();
+    capaModulos.addTo(
+        mapa
+    );
 
 
-    /*
-     * Algunos registros no tienen
-     * "BENEFICIARIO:"
-     */
+    // --------------------------------------------------------
+    // EXTENSIÓN DEL MAPA
+    // --------------------------------------------------------
 
-    const firstLine =
-        description
-            .split("\n")[0]
-            .trim();
+    const bounds =
+        capaModulos.getBounds();
 
 
-    return firstLine;
+    if (
+        bounds.isValid()
+    ) {
+
+        mapa.fitBounds(
+            bounds,
+            {
+                padding: [
+                    40,
+                    40
+                ]
+            }
+        );
+
+    }
 
 }
 
 
-function parseSector(
-    description
+// ============================================================
+// OBTENER DATOS DEL MÓDULO
+// ============================================================
+
+function obtenerDatosModulo(
+    feature
 ) {
 
-    if (!description)
+    const propiedades =
+        feature.properties ||
+        {};
+
+
+    const nombre =
+        propiedades.Name ||
+        propiedades.name ||
+        "Sin nombre";
+
+
+    const clave =
+        normalizarNombreModulo(
+            nombre
+        );
+
+
+    const sheet =
+        datosAtributivos[
+            clave
+        ] ||
+        {};
+
+
+    return {
+
+        modulo:
+            sheet.Modulo ||
+            sheet.modulo ||
+            nombre,
+
+
+        beneficiario:
+            sheet.Beneficiario ||
+            sheet.beneficiario ||
+            extraerBeneficiario(
+                propiedades.description
+            ),
+
+
+        sector:
+            sheet.Sector ||
+            sheet.sector ||
+            "Huaripampa Bajo y Shiquip",
+
+
+        tipo:
+            sheet.Tipo ||
+            sheet.tipo ||
+            extraerTipoModulo(
+                propiedades.description
+            ),
+
+
+        estado:
+            sheet.Estado ||
+            sheet.estado ||
+            "Apto",
+
+
+        avance:
+            sheet.Avance ||
+            sheet.avance ||
+            "",
+
+
+        informe:
+            sheet.Informe ||
+            sheet.informe ||
+            sheet.LinkInforme ||
+            "",
+
+
+        fotos:
+            sheet.Fotos ||
+            sheet.fotos ||
+            sheet.LinkFotos ||
+            "",
+
+
+        observaciones:
+            sheet.Observaciones ||
+            sheet.observaciones ||
+            "",
+
+
+        fecha:
+            sheet.Fecha ||
+            sheet.fecha ||
+            ""
+
+    };
+
+}
+
+
+// ============================================================
+// NORMALIZAR NOMBRE
+// ============================================================
+
+function normalizarNombreModulo(
+    nombre
+) {
+
+    if (!nombre) {
+
         return "";
 
-
-    const lines =
-        description
-            .split("\n")
-            .map(
-                line => line.trim()
-            )
-            .filter(Boolean);
+    }
 
 
-    if (lines.length >= 2)
-        return lines[1];
+    return String(nombre)
+
+        .toUpperCase()
+
+        .replace(
+            /N°/g,
+            "N"
+        )
+
+        .replace(
+            /Nº/g,
+            "N"
+        )
+
+        .replace(
+            /°/g,
+            ""
+        )
+
+        .replace(
+            /º/g,
+            ""
+        )
+
+        .replace(
+            /\s+/g,
+            ""
+        )
+
+        .trim();
+
+}
+
+
+// ============================================================
+// ESTADO
+// ============================================================
+
+function normalizarEstado(
+    estado
+) {
+
+    if (!estado) {
+
+        return "Apto";
+
+    }
+
+
+    const texto =
+        String(estado)
+            .toLowerCase()
+            .trim();
+
+
+    if (
+        texto.includes(
+            "proceso"
+        )
+    ) {
+
+        return "En proceso";
+
+    }
+
+
+    if (
+        texto.includes(
+            "intervenido"
+        )
+    ) {
+
+        return "Intervenido";
+
+    }
+
+
+    if (
+        texto.includes(
+            "apto"
+        )
+    )
+    {
+
+        return "Apto";
+
+    }
+
+
+    return "Apto";
+
+}
+
+
+// ============================================================
+// COLOR ESTADO
+// ============================================================
+
+function colorEstado(
+    estado
+) {
+
+    const normalizado =
+        normalizarEstado(
+            estado
+        );
+
+
+    if (
+        normalizado ===
+        "En proceso"
+    ) {
+
+        return "#1976d2";
+
+    }
+
+
+    if (
+        normalizado ===
+        "Intervenido"
+    ) {
+
+        return "#2e7d32";
+
+    }
+
+
+    return "#e53935";
+
+}
+
+
+// ============================================================
+// EXTRAER BENEFICIARIO
+// ============================================================
+
+function extraerBeneficiario(
+    descripcion
+) {
+
+    if (!descripcion) {
+
+        return "Sin información";
+
+    }
+
+
+    let texto =
+        String(descripcion);
+
+
+    texto =
+        texto.replace(
+            /BENEFICIARIO:/gi,
+            ""
+        );
+
+
+    const lineas =
+        texto.split(
+            "\n"
+        );
+
+
+    return (
+        lineas[0] ||
+        "Sin información"
+    ).trim();
+
+}
+
+
+// ============================================================
+// EXTRAER TIPO
+// ============================================================
+
+function extraerTipoModulo(
+    descripcion
+) {
+
+    if (!descripcion) {
+
+        return "";
+
+    }
+
+
+    const texto =
+        String(descripcion);
+
+
+    if (
+        texto.includes(
+            "MOD. HAB 01"
+        )
+    ) {
+
+        return "MOD. HAB 01";
+
+    }
+
+
+    if (
+        texto.includes(
+            "MOD. HAB 02"
+        )
+    ) {
+
+        return "MOD. HAB 02";
+
+    }
 
 
     return "";
@@ -715,522 +1150,274 @@ function parseSector(
 }
 
 
-function parseTipo(
-    description
+// ============================================================
+// POPUP
+// ============================================================
+
+function crearPopup(
+    feature,
+    datos
 ) {
 
-    if (!description)
-        return "";
+    const coordenadas =
+        feature.geometry.coordinates;
 
 
-    const match =
-        description.match(
-            /MOD\.\s*HAB\s*\d+/i
+    const longitud =
+        coordenadas[0];
+
+
+    const latitud =
+        coordenadas[1];
+
+
+    const color =
+        colorEstado(
+            datos.estado
         );
 
 
-    return match
-        ? match[0].trim()
-        : "";
+    return `
 
-}
+        <div class="popup-modulo">
 
+            <div class="popup-titulo">
 
-/* =========================================================
-   DIBUJAR MÓDULOS
-========================================================= */
-
-function drawModules() {
-
-    /*
-     * Eliminar capa anterior
-     */
-
-    if (geojsonLayer) {
-
-        geojsonLayer.remove();
-
-    }
-
-
-    markers = [];
-
-
-    const markerGroup =
-        L.featureGroup();
-
-
-    moduleFeatures.forEach(
-        module => {
-
-            const marker =
-                createModuleMarker(
-                    module
-                );
-
-
-            marker.addTo(
-                markerGroup
-            );
-
-
-            markers.push({
-
-                module:
-                    module,
-
-                marker:
-                    marker
-
-            });
-
-        }
-    );
-
-
-    geojsonLayer =
-        markerGroup;
-
-
-    /*
-     * Extensión
-     */
-
-    if (
-        moduleFeatures.length
-    ) {
-
-        allBounds =
-            markerGroup.getBounds();
-
-
-        map.fitBounds(
-            allBounds,
-            {
-                padding: [40, 40]
-            }
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   CREAR MARCADOR
-========================================================= */
-
-function createModuleMarker(
-    module
-) {
-
-    const status =
-        statusClass(
-            module.estado
-        );
-
-
-    const icon =
-        L.divIcon({
-
-            className:
-                "custom-module-marker",
-
-            html:
-                `
-                <div class="
-                    module-marker
-                    marker-${status}
-                ">
-                    ${extractNumber(module.id)}
-                </div>
-                `,
-
-            iconSize:
-                [28, 28],
-
-            iconAnchor:
-                [14, 14],
-
-            popupAnchor:
-                [0, -14]
-
-        });
-
-
-    const marker =
-        L.marker(
-            [module.lat, module.lng],
-            {
-                icon: icon
-            }
-        );
-
-
-    marker.bindTooltip(
-        module.displayName,
-        {
-
-            direction: "top",
-
-            offset: [0, -12],
-
-            opacity: .9
-
-        }
-    );
-
-
-    marker.on(
-        "click",
-        function() {
-
-            showModule(
-                module
-            );
-
-        }
-    );
-
-
-    return marker;
-
-}
-
-
-/* =========================================================
-   STATUS CSS
-========================================================= */
-
-function statusClass(
-    status
-) {
-
-    switch (
-        normalizeStatus(status)
-    ) {
-
-        case "PROCESO":
-            return "proceso";
-
-        case "INTERVENIDO":
-            return "intervenido";
-
-        default:
-            return "apto";
-
-    }
-
-}
-
-
-/* =========================================================
-   LISTA
-========================================================= */
-
-function updateList(
-    filter = ""
-) {
-
-    const container =
-        document.getElementById(
-            "moduleList"
-        );
-
-
-    const search =
-        filter
-            .trim()
-            .toLowerCase();
-
-
-    const filtered =
-        moduleFeatures.filter(
-            module => {
-
-                if (!search)
-                    return true;
-
-
-                return (
-
-                    module.id
-                        .toLowerCase()
-                        .includes(search)
-
-                    ||
-
-                    module.displayName
-                        .toLowerCase()
-                        .includes(search)
-
-                    ||
-
-                    (
-                        module.beneficiario ||
-                        ""
-                    )
-                    .toLowerCase()
-                    .includes(search)
-
-                    ||
-
-                    (
-                        module.sector ||
-                        ""
-                    )
-                    .toLowerCase()
-                    .includes(search)
-
-                );
-
-            }
-        );
-
-
-    document.getElementById(
-        "resultCount"
-    ).textContent =
-        filtered.length;
-
-
-    container.innerHTML = "";
-
-
-    filtered.forEach(
-        module => {
-
-            const item =
-                document.createElement(
-                    "div"
-                );
-
-
-            item.className =
-                "module-item";
-
-
-            item.innerHTML = `
-
-                <span class="
-                    module-status
-                    ${statusClass(module.estado)}
-                "></span>
-
-                <div class="module-info">
-
-                    <div class="module-name">
-
-                        ${escapeHTML(
-                            module.displayName
-                        )}
-
-                    </div>
-
-                    <div class="
-                        module-beneficiario
-                    ">
-
-                        ${escapeHTML(
-                            module.beneficiario ||
-                            "Sin beneficiario"
-                        )}
-
-                    </div>
-
-                </div>
-            `;
-
-
-            item.addEventListener(
-                "click",
-                function() {
-
-                    map.setView(
-                        [
-                            module.lat,
-                            module.lng
-                        ],
-                        18
-                    );
-
-
-                    showModule(
-                        module
-                    );
-
-                }
-            );
-
-
-            container.appendChild(
-                item
-            );
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   ESTADÍSTICAS
-========================================================= */
-
-function updateStats() {
-
-    const total =
-        moduleFeatures.length;
-
-
-    const aptos =
-        moduleFeatures.filter(
-            m =>
-                m.estado === "APTO"
-        ).length;
-
-
-    const proceso =
-        moduleFeatures.filter(
-            m =>
-                m.estado === "PROCESO"
-        ).length;
-
-
-    const intervenidos =
-        moduleFeatures.filter(
-            m =>
-                m.estado === "INTERVENIDO"
-        ).length;
-
-
-    document.getElementById(
-        "totalModulos"
-    ).textContent =
-        total;
-
-
-    document.getElementById(
-        "totalAptos"
-    ).textContent =
-        aptos;
-
-
-    document.getElementById(
-        "totalProceso"
-    ).textContent =
-        proceso;
-
-
-    document.getElementById(
-        "totalIntervenidos"
-    ).textContent =
-        intervenidos;
-
-}
-
-
-/* =========================================================
-   DETALLE
-========================================================= */
-
-function showModule(
-    module
-) {
-
-    const content =
-        document.getElementById(
-            "detailContent"
-        );
-
-
-    const status =
-        normalizeStatus(
-            module.estado
-        );
-
-
-    let reportButton = "";
-
-
-    if (module.informe) {
-
-        reportButton = `
-
-            <a
-                class="report-button"
-                href="${escapeAttribute(
-                    module.informe
-                )}"
-                target="_blank"
-                rel="noopener"
-            >
-
-                <i class="
-                    fa-solid
-                    fa-file-pdf
-                "></i>
-
-                Ver informe
-
-            </a>
-
-        `;
-
-    } else {
-
-        reportButton = `
-
-            <div class="no-report">
-
-                <i class="
-                    fa-solid
-                    fa-file-circle-xmark
-                "></i>
-
-                No hay informe registrado.
+                ${escapeHTML(
+                    datos.modulo
+                )}
 
             </div>
 
-        `;
+
+            <div
+                class="popup-estado"
+                style="
+                    background:${color};
+                "
+            >
+
+                ${escapeHTML(
+                    normalizarEstado(
+                        datos.estado
+                    )
+                )}
+
+            </div>
+
+
+            <div class="popup-contenido">
+
+                <p>
+
+                    <strong>
+                        Beneficiario:
+                    </strong>
+
+                    <br>
+
+                    ${escapeHTML(
+                        datos.beneficiario
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Sector:
+                    </strong>
+
+                    <br>
+
+                    ${escapeHTML(
+                        datos.sector
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Tipo:
+                    </strong>
+
+                    <br>
+
+                    ${escapeHTML(
+                        datos.tipo || "-"
+                    )}
+
+                </p>
+
+
+                ${
+                    datos.avance
+                    ?
+                    `
+                    <p>
+                        <strong>
+                            Avance:
+                        </strong>
+
+                        <br>
+
+                        ${escapeHTML(
+                            datos.avance
+                        )}
+                    </p>
+                    `
+                    :
+                    ""
+                }
+
+
+                <p>
+
+                    <strong>
+                        Coordenadas:
+                    </strong>
+
+                    <br>
+
+                    ${latitud.toFixed(6)},
+                    ${longitud.toFixed(6)}
+
+                </p>
+
+
+                ${
+                    datos.informe
+                    ?
+                    `
+                    <a
+                        href="${escapeAttribute(datos.informe)}"
+                        target="_blank"
+                        rel="noopener"
+                        class="btn-informe"
+                    >
+
+                        <i class="fa-solid fa-file-pdf"></i>
+
+                        Ver informe
+
+                    </a>
+                    `
+                    :
+                    ""
+                }
+
+
+                ${
+                    datos.fotos
+                    ?
+                    `
+                    <a
+                        href="${escapeAttribute(datos.fotos)}"
+                        target="_blank"
+                        rel="noopener"
+                        class="btn-fotos"
+                    >
+
+                        <i class="fa-solid fa-camera"></i>
+
+                        Ver fotografías
+
+                    </a>
+                    `
+                    :
+                    ""
+                }
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+// ============================================================
+// PANEL DETALLE
+// ============================================================
+
+function mostrarInformacionModulo(
+    feature,
+    datos
+) {
+
+    const panel =
+        document.getElementById(
+            "detalle-modulo"
+        );
+
+
+    if (!panel) {
+
+        return;
 
     }
 
 
-    content.innerHTML = `
+    panel.innerHTML = `
 
-        <div class="detail-title">
+        <button
+            id="cerrar-detalle"
+            class="cerrar-detalle"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+
+        <div class="detalle-header">
+
+            <h2>
+
+                ${escapeHTML(
+                    datos.modulo
+                )}
+
+            </h2>
+
+        </div>
+
+
+        <div class="detalle-estado">
+
+            <span
+                class="estado-dot"
+                style="
+                    background:
+                    ${colorEstado(
+                        datos.estado
+                    )}
+                "
+            ></span>
 
             ${escapeHTML(
-                module.displayName
+                normalizarEstado(
+                    datos.estado
+                )
             )}
 
         </div>
 
 
-        <div class="
-            detail-status
-            ${statusClass(status)}
-        ">
+        <div class="detalle-item">
 
-            <i class="fa-solid fa-circle"></i>
-
-            ${escapeHTML(status)}
-
-        </div>
-
-
-        <div class="detail-row">
-
-            <span class="detail-label">
+            <strong>
                 Beneficiario
-            </span>
+            </strong>
 
-            <div class="detail-value">
+            <div>
 
                 ${escapeHTML(
-                    module.beneficiario ||
-                    "No registrado"
+                    datos.beneficiario
                 )}
 
             </div>
@@ -1238,17 +1425,16 @@ function showModule(
         </div>
 
 
-        <div class="detail-row">
+        <div class="detalle-item">
 
-            <span class="detail-label">
+            <strong>
                 Sector
-            </span>
+            </strong>
 
-            <div class="detail-value">
+            <div>
 
                 ${escapeHTML(
-                    module.sector ||
-                    "No registrado"
+                    datos.sector
                 )}
 
             </div>
@@ -1256,17 +1442,16 @@ function showModule(
         </div>
 
 
-        <div class="detail-row">
+        <div class="detalle-item">
 
-            <span class="detail-label">
-                Tipo
-            </span>
+            <strong>
+                Tipo de módulo
+            </strong>
 
-            <div class="detail-value">
+            <div>
 
                 ${escapeHTML(
-                    module.tipo ||
-                    "No registrado"
+                    datos.tipo || "-"
                 )}
 
             </div>
@@ -1274,347 +1459,1153 @@ function showModule(
         </div>
 
 
-        <div class="detail-row">
+        ${
+            datos.avance
+            ?
+            `
+            <div class="detalle-item">
 
-            <span class="detail-label">
-                Fecha
-            </span>
+                <strong>
+                    Avance
+                </strong>
 
-            <div class="detail-value">
+                <div>
 
-                ${escapeHTML(
-                    module.fecha ||
-                    "No registrada"
-                )}
+                    ${escapeHTML(
+                        datos.avance
+                    )}
 
-            </div>
-
-        </div>
-
-
-        <div class="detail-row">
-
-            <span class="detail-label">
-                Observaciones
-            </span>
-
-            <div class="detail-value">
-
-                ${escapeHTML(
-                    module.observaciones ||
-                    "Sin observaciones."
-                )}
+                </div>
 
             </div>
+            `
+            :
+            ""
+        }
 
-        </div>
+
+        ${
+            datos.observaciones
+            ?
+            `
+            <div class="detalle-item">
+
+                <strong>
+                    Observaciones
+                </strong>
+
+                <div>
+
+                    ${escapeHTML(
+                        datos.observaciones
+                    )}
+
+                </div>
+
+            </div>
+            `
+            :
+            ""
+        }
 
 
-        ${reportButton}
+        ${
+            datos.fecha
+            ?
+            `
+            <div class="detalle-item">
+
+                <strong>
+                    Fecha
+                </strong>
+
+                <div>
+
+                    ${escapeHTML(
+                        datos.fecha
+                    )}
+
+                </div>
+
+            </div>
+            `
+            :
+            ""
+        }
+
+
+        ${
+            datos.informe
+            ?
+            `
+            <a
+                href="${escapeAttribute(datos.informe)}"
+                target="_blank"
+                rel="noopener"
+                class="btn-principal"
+            >
+
+                <i class="fa-solid fa-file-pdf"></i>
+
+                Ver informe
+
+            </a>
+            `
+            :
+            ""
+        }
+
+
+        ${
+            datos.fotos
+            ?
+            `
+            <a
+                href="${escapeAttribute(datos.fotos)}"
+                target="_blank"
+                rel="noopener"
+                class="btn-secundario"
+            >
+
+                <i class="fa-solid fa-images"></i>
+
+                Ver fotografías
+
+            </a>
+            `
+            :
+            ""
+        }
 
     `;
 
 
+    panel.classList.add(
+        "visible"
+    );
+
+
     document
         .getElementById(
-            "detailOverlay"
+            "cerrar-detalle"
         )
-        .classList.add(
-            "active"
+        .addEventListener(
+            "click",
+            cerrarDetalleModulo
         );
 
 }
 
 
-/* =========================================================
-   EVENTOS
-========================================================= */
+function cerrarDetalleModulo() {
 
-function setupEvents() {
+    const panel =
+        document.getElementById(
+            "detalle-modulo"
+        );
 
-    /*
-     * Buscador
-     */
 
-    document
-        .getElementById(
-            "searchInput"
-        )
-        .addEventListener(
-            "input",
-            function(event) {
+    if (panel) {
 
-                updateList(
-                    event.target.value
+        panel.classList.remove(
+            "visible"
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// ESTADÍSTICAS
+// ============================================================
+
+function actualizarEstadisticas(
+    geojson
+) {
+
+    let aptos = 0;
+
+    let proceso = 0;
+
+    let intervenidos = 0;
+
+
+    // --------------------------------------------------------
+    // IMPORTANTE:
+    // Solo cuenta los módulos N01-N27
+    // --------------------------------------------------------
+
+    geojson.features.forEach(
+        feature => {
+
+            const nombre =
+                feature.properties?.Name ||
+                "";
+
+
+            if (
+                !esModuloHabitacional(
+                    nombre
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const datos =
+                obtenerDatosModulo(
+                    feature
+                );
+
+
+            const estado =
+                normalizarEstado(
+                    datos.estado
+                );
+
+
+            if (
+                estado === "Apto"
+            ) {
+
+                aptos++;
+
+            }
+            else if (
+                estado ===
+                "En proceso"
+            ) {
+
+                proceso++;
+
+            }
+            else if (
+                estado ===
+                "Intervenido"
+            ) {
+
+                intervenidos++;
+
+            }
+
+        }
+    );
+
+
+    const total =
+        aptos +
+        proceso +
+        intervenidos;
+
+
+    actualizarElemento(
+        "total-modulos",
+        total
+    );
+
+
+    actualizarElemento(
+        "total-aptos",
+        aptos
+    );
+
+
+    actualizarElemento(
+        "total-proceso",
+        proceso
+    );
+
+
+    actualizarElemento(
+        "total-intervenidos",
+        intervenidos
+    );
+
+}
+
+
+// ============================================================
+// COMPROBAR MÓDULO HABITACIONAL
+// ============================================================
+
+function esModuloHabitacional(
+    nombre
+) {
+
+    if (!nombre) {
+
+        return false;
+
+    }
+
+
+    const texto =
+        normalizarNombreModulo(
+            nombre
+        );
+
+
+    return /^N\d+$/.test(
+        texto
+    );
+
+}
+
+
+// ============================================================
+// LISTADO
+// ============================================================
+
+function actualizarListado(
+    geojson
+) {
+
+    const lista =
+        document.getElementById(
+            "lista-modulos"
+        );
+
+
+    if (!lista) {
+
+        return;
+
+    }
+
+
+    lista.innerHTML = "";
+
+
+    let contador = 0;
+
+
+    geojson.features.forEach(
+        feature => {
+
+            const nombre =
+                feature.properties?.Name ||
+                "";
+
+
+            if (
+                !esModuloHabitacional(
+                    nombre
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const datos =
+                obtenerDatosModulo(
+                    feature
+                );
+
+
+            const elemento =
+                document.createElement(
+                    "div"
+                );
+
+
+            elemento.className =
+                "item-modulo";
+
+
+            elemento.innerHTML = `
+
+                <div
+                    class="item-indicador"
+                    style="
+                        background:
+                        ${colorEstado(
+                            datos.estado
+                        )}
+                    "
+                ></div>
+
+
+                <div
+                    class="item-contenido"
+                >
+
+                    <strong>
+
+                        ${escapeHTML(
+                            datos.modulo
+                        )}
+
+                    </strong>
+
+
+                    <span>
+
+                        ${escapeHTML(
+                            datos.beneficiario
+                        )}
+
+                    </span>
+
+                </div>
+
+            `;
+
+
+            elemento.addEventListener(
+                "click",
+                function () {
+
+                    enfocarFeature(
+                        feature
+                    );
+
+                }
+            );
+
+
+            lista.appendChild(
+                elemento
+            );
+
+
+            contador++;
+
+        }
+    );
+
+
+    actualizarElemento(
+        "contador-listado",
+        contador
+    );
+
+}
+
+
+// ============================================================
+// ENFOCAR MÓDULO
+// ============================================================
+
+function enfocarFeature(
+    feature
+) {
+
+    const coordenadas =
+        feature.geometry.coordinates;
+
+
+    const latitud =
+        coordenadas[1];
+
+
+    const longitud =
+        coordenadas[0];
+
+
+    mapa.setView(
+        [
+            latitud,
+            longitud
+        ],
+        19,
+        {
+            animate: true
+        }
+    );
+
+
+    capaModulos.eachLayer(
+        layer => {
+
+            if (
+                layer.feature ===
+                feature
+            ) {
+
+                setTimeout(
+                    () => {
+
+                        layer.openPopup();
+
+                    },
+                    350
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// FILTRAR
+// ============================================================
+
+function filtrarModulos(
+    texto
+) {
+
+    if (!datosGeoJSON) {
+
+        return;
+
+    }
+
+
+    const busqueda =
+        String(texto)
+            .toLowerCase()
+            .trim();
+
+
+    const resultados =
+        datosGeoJSON.features.filter(
+            feature => {
+
+                const propiedades =
+                    feature.properties ||
+                    {};
+
+
+                const nombre =
+                    propiedades.Name ||
+                    "";
+
+
+                const datos =
+                    obtenerDatosModulo(
+                        feature
+                    );
+
+
+                const contenido = (
+
+                    nombre +
+                    " " +
+                    datos.beneficiario +
+                    " " +
+                    datos.estado +
+                    " " +
+                    datos.tipo
+
+                ).toLowerCase();
+
+
+                return contenido.includes(
+                    busqueda
                 );
 
             }
         );
 
 
-    /*
-     * Cerrar detalle
-     */
+    actualizarListado({
+        type:
+            "FeatureCollection",
 
-    document
-        .getElementById(
-            "btnCerrarDetalle"
-        )
-        .addEventListener(
-            "click",
-            closeDetail
-        );
-
-
-    document
-        .getElementById(
-            "detailOverlay"
-        )
-        .addEventListener(
-            "click",
-            function(event) {
-
-                if (
-                    event.target ===
-                    this
-                ) {
-
-                    closeDetail();
-
-                }
-
-            }
-        );
-
-
-    /*
-     * Menú móvil
-     */
-
-    document
-        .getElementById(
-            "btnMenu"
-        )
-        .addEventListener(
-            "click",
-            function() {
-
-                document
-                    .getElementById(
-                        "sidebar"
-                    )
-                    .classList
-                    .toggle("open");
-
-            }
-        );
-
-
-    /*
-     * Cerrar panel
-     */
-
-    document
-        .getElementById(
-            "btnCerrarPanel"
-        )
-        .addEventListener(
-            "click",
-            function() {
-
-                document
-                    .getElementById(
-                        "sidebar"
-                    )
-                    .classList
-                    .remove("open");
-
-            }
-        );
-
-
-    /*
-     * Extender mapa
-     */
-
-    document
-        .getElementById(
-            "btnExtender"
-        )
-        .addEventListener(
-            "click",
-            function() {
-
-                if (allBounds) {
-
-                    map.fitBounds(
-                        allBounds,
-                        {
-                            padding: [40, 40]
-                        }
-                    );
-
-                }
-
-            }
-        );
-
-
-    /*
-     * Ubicación
-     */
-
-    document
-        .getElementById(
-            "btnUbicacion"
-        )
-        .addEventListener(
-            "click",
-            locateUser
-        );
-
-}
-
-
-/* =========================================================
-   UBICACIÓN
-========================================================= */
-
-function locateUser() {
-
-    map.locate({
-
-        setView: true,
-
-        maxZoom: 17,
-
-        enableHighAccuracy: true
+        features:
+            resultados
 
     });
 
 }
 
 
-/* =========================================================
-   CERRAR DETALLE
-========================================================= */
+// ============================================================
+// TABLA DE BENEFICIARIOS
+// ============================================================
 
-function closeDetail() {
+function abrirTabla() {
 
-    document
-        .getElementById(
-            "detailOverlay"
-        )
-        .classList.remove(
-            "active"
-        );
-
-}
-
-
-/* =========================================================
-   LOADING
-========================================================= */
-
-function showLoading(
-    show
-) {
-
-    document
-        .getElementById(
-            "loading"
-        )
-        .classList
-        .toggle(
-            "hidden",
-            !show
-        );
-
-}
-
-
-/* =========================================================
-   TOAST
-========================================================= */
-
-function showToast(
-    message
-) {
-
-    const toast =
+    const modal =
         document.getElementById(
-            "toast"
+            "modal-tabla"
         );
 
 
-    toast.textContent =
-        message;
+    if (!modal) {
+
+        return;
+
+    }
 
 
-    toast.classList.add(
-        "show"
+    modal.classList.add(
+        "visible"
     );
+
+
+    actualizarTabla();
+
+}
+
+
+function cerrarTabla() {
+
+    const modal =
+        document.getElementById(
+            "modal-tabla"
+        );
+
+
+    if (modal) {
+
+        modal.classList.remove(
+            "visible"
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// ACTUALIZAR TABLA
+// ============================================================
+
+function actualizarTabla() {
+
+    if (!datosGeoJSON) {
+
+        return;
+
+    }
+
+
+    const tabla =
+        document.getElementById(
+            "tabla-beneficiarios"
+        );
+
+
+    if (!tabla) {
+
+        return;
+
+    }
+
+
+    tabla.innerHTML = "";
+
+
+    datosGeoJSON.features.forEach(
+        feature => {
+
+            const nombre =
+                feature.properties?.Name ||
+                "";
+
+
+            if (
+                !esModuloHabitacional(
+                    nombre
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const datos =
+                obtenerDatosModulo(
+                    feature
+                );
+
+
+            const tr =
+                document.createElement(
+                    "tr"
+                );
+
+
+            const estado =
+                normalizarEstado(
+                    datos.estado
+                );
+
+
+            const color =
+                colorEstado(
+                    estado
+                );
+
+
+            tr.innerHTML = `
+
+                <td>
+
+                    <strong>
+                        ${escapeHTML(
+                            datos.modulo
+                        )}
+                    </strong>
+
+                </td>
+
+
+                <td>
+
+                    ${escapeHTML(
+                        datos.beneficiario
+                    )}
+
+                </td>
+
+
+                <td>
+
+                    ${escapeHTML(
+                        datos.sector
+                    )}
+
+                </td>
+
+
+                <td>
+
+                    ${escapeHTML(
+                        datos.tipo || "-"
+                    )}
+
+                </td>
+
+
+                <td>
+
+                    <span
+                        class="estado-tabla"
+                        style="
+                            background:${color};
+                        "
+                    >
+
+                        ${escapeHTML(
+                            estado
+                        )}
+
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    ${escapeHTML(
+                        datos.avance || "-"
+                    )}
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        datos.informe
+                        ?
+                        `
+                        <a
+                            href="${escapeAttribute(datos.informe)}"
+                            target="_blank"
+                            rel="noopener"
+                            class="informe-link"
+                        >
+
+                            <i class="fa-solid fa-file-pdf"></i>
+
+                            Ver
+
+                        </a>
+                        `
+                        :
+                        "-"
+                    }
+
+                </td>
+
+            `;
+
+
+            tabla.appendChild(
+                tr
+            );
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// FILTRAR TABLA
+// ============================================================
+
+function filtrarTabla(
+    texto
+) {
+
+    const busqueda =
+        String(texto)
+            .toLowerCase()
+            .trim();
+
+
+    const filas =
+        document.querySelectorAll(
+            "#tabla-beneficiarios tr"
+        );
+
+
+    filas.forEach(
+        fila => {
+
+            const contenido =
+                fila.textContent
+                    .toLowerCase();
+
+
+            fila.style.display =
+                contenido.includes(
+                    busqueda
+                )
+                ?
+                ""
+                :
+                "none";
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// ACTUALIZAR CONEXIÓN
+// ============================================================
+
+function actualizarConexion(
+    texto,
+    conectado
+) {
+
+    const elemento =
+        document.getElementById(
+            "estado-conexion"
+        );
+
+
+    if (!elemento) {
+
+        return;
+
+    }
+
+
+    const color =
+        conectado
+        ?
+        "#69f0ae"
+        :
+        "#ffca28";
+
+
+    elemento.innerHTML = `
+
+        <i
+            class="fa-solid fa-circle"
+            style="
+                color:${color};
+            "
+        ></i>
+
+        ${escapeHTML(
+            texto
+        )}
+
+    `;
+
+}
+
+
+// ============================================================
+// CARGA
+// ============================================================
+
+function mostrarCargaMapa(
+    mostrar
+) {
+
+    const elemento =
+        document.getElementById(
+            "cargando-mapa"
+        );
+
+
+    if (!elemento) {
+
+        return;
+
+    }
+
+
+    elemento.classList.toggle(
+        "oculto",
+        !mostrar
+    );
+
+}
+
+
+// ============================================================
+// MENSAJE
+// ============================================================
+
+function mostrarMensaje(
+    mensaje
+) {
+
+    let elemento =
+        document.getElementById(
+            "mensaje-sistema"
+        );
+
+
+    if (!elemento) {
+
+        elemento =
+            document.createElement(
+                "div"
+            );
+
+
+        elemento.id =
+            "mensaje-sistema";
+
+
+        elemento.style.cssText = `
+
+            position:fixed;
+
+            right:20px;
+
+            bottom:20px;
+
+            z-index:99999;
+
+            background:#263238;
+
+            color:white;
+
+            padding:12px 18px;
+
+            border-radius:8px;
+
+            box-shadow:
+                0 5px 20px
+                rgba(0,0,0,.3);
+
+            font-size:12px;
+
+        `;
+
+
+        document.body.appendChild(
+            elemento
+        );
+
+    }
+
+
+    elemento.textContent =
+        mensaje;
 
 
     setTimeout(
         () => {
 
-            toast.classList.remove(
-                "show"
-            );
+            if (elemento) {
+
+                elemento.remove();
+
+            }
 
         },
-        3500
+        4000
     );
 
 }
 
 
-/* =========================================================
-   SEGURIDAD HTML
-========================================================= */
+// ============================================================
+// ERROR
+// ============================================================
+
+function mostrarError(
+    mensaje
+) {
+
+    const lista =
+        document.getElementById(
+            "lista-modulos"
+        );
+
+
+    if (!lista) {
+
+        return;
+
+    }
+
+
+    lista.innerHTML = `
+
+        <div
+            style="
+                padding:15px;
+                margin:5px;
+                background:#ffebee;
+                color:#b71c1c;
+                border-radius:8px;
+                font-size:12px;
+            "
+        >
+
+            <strong>
+                Error cargando GeoJSON
+            </strong>
+
+            <br><br>
+
+            ${escapeHTML(
+                mensaje
+            )}
+
+            <br><br>
+
+            Verifica que
+            <strong>
+                modulos.geojson
+            </strong>
+            esté en la misma carpeta
+            que index.html.
+
+        </div>
+
+    `;
+
+}
+
+
+// ============================================================
+// ACTUALIZAR ELEMENTO
+// ============================================================
+
+function actualizarElemento(
+    id,
+    valor
+) {
+
+    const elemento =
+        document.getElementById(
+            id
+        );
+
+
+    if (elemento) {
+
+        elemento.textContent =
+            valor;
+
+    }
+
+}
+
+
+// ============================================================
+// SEGURIDAD HTML
+// ============================================================
 
 function escapeHTML(
-    value
+    texto
 ) {
 
-    return String(
-        value ?? ""
-    )
-    .replace(
-        /&/g,
-        "&amp;"
-    )
-    .replace(
-        /</g,
-        "&lt;"
-    )
-    .replace(
-        />/g,
-        "&gt;"
-    )
-    .replace(
-        /"/g,
-        "&quot;"
-    )
-    .replace(
-        /'/g,
-        "&#039;"
-    );
+    if (
+        texto === null ||
+        texto === undefined
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(texto)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
+
+// ============================================================
+// SEGURIDAD ATRIBUTOS
+// ============================================================
 
 function escapeAttribute(
-    value
+    texto
 ) {
 
-    return String(
-        value ?? ""
-    )
-    .replace(
-        /"/g,
-        "&quot;"
-    );
+    if (!texto) {
+
+        return "";
+
+    }
+
+
+    return String(texto)
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
+
+
+// ============================================================
+// FIN
+// ============================================================
