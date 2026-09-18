@@ -45,7 +45,6 @@ let capaSatelite = null;
 
 let capaCalles = null;
 
-let capaEtiquetas = null;
 
 
 // ============================================================
@@ -142,26 +141,7 @@ function inicializarMapa() {
         );
 
 
-    // --------------------------------------------------------
-    // ETIQUETAS
-    // --------------------------------------------------------
-
-    capaEtiquetas =
-        L.tileLayer(
-            "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-            {
-                maxZoom: 22,
-
-                attribution:
-                    "Esri"
-            }
-        );
-
-
     capaSatelite.addTo(mapa);
-
-    capaEtiquetas.addTo(mapa);
-
 
     // --------------------------------------------------------
     // NOTA: el selector de capas nativo de Leaflet se reemplazó
@@ -201,12 +181,6 @@ function cambiarCapaBase(
 
         }
 
-        if (mapa.hasLayer(capaEtiquetas)) {
-
-            mapa.removeLayer(capaEtiquetas);
-
-        }
-
         if (!mapa.hasLayer(capaCalles)) {
 
             capaCalles.addTo(mapa);
@@ -232,13 +206,6 @@ function cambiarCapaBase(
             capaSatelite.addTo(mapa);
 
         }
-
-        if (!mapa.hasLayer(capaEtiquetas)) {
-
-            capaEtiquetas.addTo(mapa);
-
-        }
-
 
         if (botonSatelite) botonSatelite.classList.add("activa");
 
