@@ -1022,7 +1022,7 @@ body {
 
     position: absolute;
 
-    z-index: 700;
+    z-index: 3000;
 
     right: 10px;
 
@@ -1035,6 +1035,8 @@ body {
     align-items: flex-end;
 
     gap: 8px;
+
+    pointer-events: auto;
 
 }
 
@@ -1670,12 +1672,30 @@ tbody tr:hover {
        HERRAMIENTAS DEL MAPA
     ---------------------------------------------------- */
 
-    .panel-herramientas {
+.panel-herramientas {
 
-        width: 180px;
+    width: 190px;
 
-    }
+    position: relative;
 
+    z-index: 3001;
+
+    pointer-events: auto;
+
+}
+
+
+   .capa-btn {
+
+    position: relative;
+
+    z-index: 3002;
+
+    pointer-events: auto;
+
+    touch-action: manipulation;
+
+}
 
     /* ----------------------------------------------------
        MODAL DE TABLA
