@@ -41,6 +41,12 @@ let datosGeoJSON = null;
 
 let datosAtributivos = {};
 
+let capaSatelite = null;
+
+let capaCalles = null;
+
+let capaEtiquetas = null;
+
 
 // ============================================================
 // INICIO
@@ -61,6 +67,20 @@ async function iniciar() {
     await cargarGeoJSON();
 
     await cargarGoogleScript();
+
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            if (mapa) {
+
+                mapa.invalidateSize();
+
+            }
+
+        }
+    );
 
 }
 
@@ -91,7 +111,7 @@ function inicializarMapa() {
     // SATÉLITE
     // --------------------------------------------------------
 
-    const satelite =
+    capaSatelite =
         L.tileLayer(
             "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             {
@@ -107,7 +127,7 @@ function inicializarMapa() {
     // CALLES
     // --------------------------------------------------------
 
-    const calles =
+    capaCalles =
         L.tileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
             {
@@ -123,7 +143,7 @@ function inicializarMapa() {
     // ETIQUETAS
     // --------------------------------------------------------
 
-    const etiquetas =
+    capaEtiquetas =
         L.tileLayer(
             "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
             {
@@ -135,25 +155,93 @@ function inicializarMapa() {
         );
 
 
-    satelite.addTo(mapa);
+    capaSatelite.addTo(mapa);
 
-    etiquetas.addTo(mapa);
+    capaEtiquetas.addTo(mapa);
 
 
     // --------------------------------------------------------
-    // CAPAS BASE
+    // NOTA: el selector de capas nativo de Leaflet se reemplazó
+    // por el panel de herramientas propio (más grande y táctil
+    // en celular). Ver cambiarCapaBase() y configurarHerramientas().
     // --------------------------------------------------------
 
-    L.control.layers(
-        {
-            "Satélite": satelite,
-            "Calles": calles
-        },
-        null,
-        {
-            position: "topright"
+}
+
+
+// ============================================================
+// CAMBIAR CAPA BASE (satélite / calles)
+// ============================================================
+
+function cambiarCapaBase(
+    capa
+) {
+
+    const botonSatelite =
+        document.getElementById(
+            "capa-satelite"
+        );
+
+    const botonCalles =
+        document.getElementById(
+            "capa-calles"
+        );
+
+
+    if (
+        capa === "calles"
+    ) {
+
+        if (mapa.hasLayer(capaSatelite)) {
+
+            mapa.removeLayer(capaSatelite);
+
         }
-    ).addTo(mapa);
+
+        if (mapa.hasLayer(capaEtiquetas)) {
+
+            mapa.removeLayer(capaEtiquetas);
+
+        }
+
+        if (!mapa.hasLayer(capaCalles)) {
+
+            capaCalles.addTo(mapa);
+
+        }
+
+
+        if (botonCalles) botonCalles.classList.add("activa");
+
+        if (botonSatelite) botonSatelite.classList.remove("activa");
+
+    }
+    else {
+
+        if (mapa.hasLayer(capaCalles)) {
+
+            mapa.removeLayer(capaCalles);
+
+        }
+
+        if (!mapa.hasLayer(capaSatelite)) {
+
+            capaSatelite.addTo(mapa);
+
+        }
+
+        if (!mapa.hasLayer(capaEtiquetas)) {
+
+            capaEtiquetas.addTo(mapa);
+
+        }
+
+
+        if (botonSatelite) botonSatelite.classList.add("activa");
+
+        if (botonCalles) botonCalles.classList.remove("activa");
+
+    }
 
 }
 
@@ -316,6 +404,124 @@ function configurarEventos() {
                     cerrarTabla();
 
                 }
+
+            }
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // MENÚ (SIDEBAR) EN CELULAR
+    // --------------------------------------------------------
+
+    const botonMenu =
+        document.getElementById(
+            "btn-menu"
+        );
+
+    const sidebar =
+        document.querySelector(
+            ".sidebar"
+        );
+
+    const backdrop =
+        document.getElementById(
+            "sidebar-backdrop"
+        );
+
+
+    if (botonMenu && sidebar && backdrop) {
+
+        botonMenu.addEventListener(
+            "click",
+            function () {
+
+                sidebar.classList.toggle("visible");
+
+                backdrop.classList.toggle("visible");
+
+            }
+        );
+
+
+        backdrop.addEventListener(
+            "click",
+            function () {
+
+                sidebar.classList.remove("visible");
+
+                backdrop.classList.remove("visible");
+
+            }
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // PANEL DE HERRAMIENTAS DEL MAPA (capas + tabla)
+    // --------------------------------------------------------
+
+    const botonHerramientas =
+        document.getElementById(
+            "btn-toggle-herramientas"
+        );
+
+    const panelHerramientas =
+        document.getElementById(
+            "panel-herramientas"
+        );
+
+
+    if (botonHerramientas && panelHerramientas) {
+
+        botonHerramientas.addEventListener(
+            "click",
+            function () {
+
+                panelHerramientas.classList.toggle("visible");
+
+                botonHerramientas.classList.toggle("activo");
+
+            }
+        );
+
+    }
+
+
+    const capaSateliteBtn =
+        document.getElementById(
+            "capa-satelite"
+        );
+
+    const capaCallesBtn =
+        document.getElementById(
+            "capa-calles"
+        );
+
+
+    if (capaSateliteBtn) {
+
+        capaSateliteBtn.addEventListener(
+            "click",
+            function () {
+
+                cambiarCapaBase("satelite");
+
+            }
+        );
+
+    }
+
+
+    if (capaCallesBtn) {
+
+        capaCallesBtn.addEventListener(
+            "click",
+            function () {
+
+                cambiarCapaBase("calles");
 
             }
         );
@@ -566,6 +772,11 @@ async function cargarGoogleScript() {
             registro => {
 
                 const modulo =
+                    registro.id ||
+                    registro.ID ||
+                    registro.Id ||
+                    registro.nombre ||
+                    registro.Nombre ||
                     registro.Modulo ||
                     registro.modulo ||
                     registro.NAME ||
@@ -826,6 +1037,9 @@ function obtenerDatosModulo(
 
 
     const nombre =
+        propiedades.id ||
+        propiedades.ID ||
+        propiedades.Id ||
         propiedades.Name ||
         propiedades.name ||
         "Sin nombre";
@@ -847,6 +1061,8 @@ function obtenerDatosModulo(
     return {
 
         modulo:
+            sheet.id ||
+            sheet.nombre ||
             sheet.Modulo ||
             sheet.modulo ||
             nombre,
@@ -877,7 +1093,7 @@ function obtenerDatosModulo(
         estado:
             sheet.Estado ||
             sheet.estado ||
-            "Apto",
+            "",
 
 
         avance:
@@ -973,9 +1189,18 @@ function normalizarEstado(
     estado
 ) {
 
-    if (!estado) {
+    // --------------------------------------------------------
+    // Sin dato todavía: el módulo aún no fue registrado
+    // (16 de los 27 módulos actuales están así, por eso NO
+    // se puede asumir "Apto" por defecto)
+    // --------------------------------------------------------
 
-        return "Apto";
+    if (
+        !estado ||
+        !String(estado).trim()
+    ) {
+
+        return "Sin evaluar";
 
     }
 
@@ -986,24 +1211,30 @@ function normalizarEstado(
             .trim();
 
 
+    // --------------------------------------------------------
+    // IMPORTANTE: "no apto" debe comprobarse ANTES que "apto",
+    // porque "no apto" también contiene la subcadena "apto" y
+    // antes quedaba mal clasificado como "Apto"
+    // --------------------------------------------------------
+
     if (
         texto.includes(
-            "proceso"
+            "no apto"
         )
     ) {
 
-        return "En proceso";
+        return "No apto";
 
     }
 
 
     if (
         texto.includes(
-            "intervenido"
+            "observ"
         )
     ) {
 
-        return "Intervenido";
+        return "Apto con observaciones";
 
     }
 
@@ -1012,15 +1243,14 @@ function normalizarEstado(
         texto.includes(
             "apto"
         )
-    )
-    {
+    ) {
 
         return "Apto";
 
     }
 
 
-    return "Apto";
+    return "Sin evaluar";
 
 }
 
@@ -1041,17 +1271,27 @@ function colorEstado(
 
     if (
         normalizado ===
-        "En proceso"
+        "No apto"
     ) {
 
-        return "#1976d2";
+        return "#e53935";
 
     }
 
 
     if (
         normalizado ===
-        "Intervenido"
+        "Apto con observaciones"
+    ) {
+
+        return "#f9a825";
+
+    }
+
+
+    if (
+        normalizado ===
+        "Apto"
     ) {
 
         return "#2e7d32";
@@ -1059,7 +1299,7 @@ function colorEstado(
     }
 
 
-    return "#e53935";
+    return "#94a3b8";
 
 }
 
@@ -1626,9 +1866,13 @@ function actualizarEstadisticas(
 
     let aptos = 0;
 
-    let proceso = 0;
+    let observaciones = 0;
 
-    let intervenidos = 0;
+    let noAptos = 0;
+
+    let sinEvaluar = 0;
+
+    let total = 0;
 
 
     // --------------------------------------------------------
@@ -1640,7 +1884,9 @@ function actualizarEstadisticas(
         feature => {
 
             const nombre =
+                feature.properties?.id ||
                 feature.properties?.Name ||
+                feature.properties?.name ||
                 "";
 
 
@@ -1667,6 +1913,9 @@ function actualizarEstadisticas(
                 );
 
 
+            total++;
+
+
             if (
                 estado === "Apto"
             ) {
@@ -1676,29 +1925,28 @@ function actualizarEstadisticas(
             }
             else if (
                 estado ===
-                "En proceso"
+                "Apto con observaciones"
             ) {
 
-                proceso++;
+                observaciones++;
 
             }
             else if (
                 estado ===
-                "Intervenido"
+                "No apto"
             ) {
 
-                intervenidos++;
+                noAptos++;
+
+            }
+            else {
+
+                sinEvaluar++;
 
             }
 
         }
     );
-
-
-    const total =
-        aptos +
-        proceso +
-        intervenidos;
 
 
     actualizarElemento(
@@ -1715,13 +1963,13 @@ function actualizarEstadisticas(
 
     actualizarElemento(
         "total-proceso",
-        proceso
+        observaciones
     );
 
 
     actualizarElemento(
         "total-intervenidos",
-        intervenidos
+        noAptos
     );
 
 }
@@ -1786,7 +2034,9 @@ function actualizarListado(
         feature => {
 
             const nombre =
+                feature.properties?.id ||
                 feature.properties?.Name ||
+                feature.properties?.name ||
                 "";
 
 
@@ -1940,6 +2190,32 @@ function enfocarFeature(
 
         }
     );
+
+
+    // --------------------------------------------------------
+    // En celular, cerrar el menú lateral al enfocar un módulo
+    // --------------------------------------------------------
+
+    if (
+        window.innerWidth <= 650
+    ) {
+
+        const sidebar =
+            document.querySelector(
+                ".sidebar"
+            );
+
+        const backdrop =
+            document.getElementById(
+                "sidebar-backdrop"
+            );
+
+
+        if (sidebar) sidebar.classList.remove("visible");
+
+        if (backdrop) backdrop.classList.remove("visible");
+
+    }
 
 }
 
@@ -2099,7 +2375,9 @@ function actualizarTabla() {
         feature => {
 
             const nombre =
+                feature.properties?.id ||
                 feature.properties?.Name ||
+                feature.properties?.name ||
                 "";
 
 
