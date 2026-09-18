@@ -111,17 +111,19 @@ function inicializarMapa() {
     // SATÉLITE
     // --------------------------------------------------------
 
+    const MAPTILER_KEY = "66uMzDVzttzlPmbt4O6o";
+
     capaSatelite =
         L.tileLayer(
-            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
             {
                 maxZoom: 22,
-                maxNativeZoom: 19,
     
                 attribution:
-                    "Tiles © Esri"
+                    '&copy; MapTiler &copy; OpenStreetMap contributors'
             }
         );
+
 
 
     // --------------------------------------------------------
