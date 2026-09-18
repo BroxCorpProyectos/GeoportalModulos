@@ -21,7 +21,7 @@ const CONFIG = {
      */
 
     GEOJSON_URL:
-        "./modulos.geojson",
+        "modulos.geojson",
 
 
     /*
