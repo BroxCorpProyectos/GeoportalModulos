@@ -63,9 +63,25 @@
 
     <header class="topbar">
 
+        <button
+            id="btn-menu"
+            class="btn-menu"
+            aria-label="Abrir menú"
+            title="Menú"
+        >
+
+            <i class="fa-solid fa-bars"></i>
+
+        </button>
+
+
         <div class="logo">
 
             <div class="logo-icon">
+
+                <!-- TODO: reemplazar por <img src="LOGO_B64" alt="Logo"> cuando
+                     se cuente con el archivo del logo completo (ver nota en la
+                     respuesta: el base64 recibido llegó incompleto/truncado) -->
 
                 <i class="fa-solid fa-map-location-dot"></i>
 
@@ -221,7 +237,7 @@
                         </strong>
 
                         <span>
-                            En proceso
+                            Con observaciones
                         </span>
 
                     </div>
@@ -244,7 +260,7 @@
                         </strong>
 
                         <span>
-                            Intervenidos
+                            No aptos
                         </span>
 
                     </div>
@@ -269,32 +285,43 @@
 
                 <div class="leyenda-item">
 
-                    <span class="leyenda-color rojo"></span>
-
-                    <span>
-                        Apto para intervenir
-                    </span>
-
-                </div>
-
-
-                <div class="leyenda-item">
-
-                    <span class="leyenda-color azul"></span>
-
-                    <span>
-                        En proceso
-                    </span>
-
-                </div>
-
-
-                <div class="leyenda-item">
-
                     <span class="leyenda-color verde"></span>
 
                     <span>
-                        Intervenido
+                        Apto
+                    </span>
+
+                </div>
+
+
+                <div class="leyenda-item">
+
+                    <span class="leyenda-color ambar"></span>
+
+                    <span>
+                        Apto con observaciones
+                    </span>
+
+                </div>
+
+
+                <div class="leyenda-item">
+
+                    <span class="leyenda-color rojo"></span>
+
+                    <span>
+                        No apto
+                    </span>
+
+                </div>
+
+
+                <div class="leyenda-item">
+
+                    <span class="leyenda-color gris"></span>
+
+                    <span>
+                        Sin evaluar
                     </span>
 
                 </div>
@@ -345,6 +372,16 @@
         </aside>
 
 
+        <!-- =================================================
+             FONDO PARA CERRAR EL MENÚ EN CELULAR
+        ================================================== -->
+
+        <div
+            id="sidebar-backdrop"
+            class="sidebar-backdrop"
+        ></div>
+
+
 
         <!-- =================================================
              MAPA
@@ -359,18 +396,74 @@
 
 
             <!-- =============================================
-                 BOTÓN TABLA
+                 HERRAMIENTAS DEL MAPA (capa base + tabla)
             ============================================== -->
 
-            <button
-                id="btn-tabla"
-                class="mapa-boton tabla-boton"
-                title="Mostrar tabla de beneficiarios"
-            >
+            <div class="herramientas-mapa">
 
-                <i class="fa-solid fa-table"></i>
+                <button
+                    id="btn-toggle-herramientas"
+                    class="mapa-boton activo"
+                    title="Mostrar u ocultar herramientas"
+                >
 
-            </button>
+                    <i class="fa-solid fa-sliders"></i>
+
+                </button>
+
+
+                <div
+                    id="panel-herramientas"
+                    class="panel-herramientas visible"
+                >
+
+                    <div class="panel-herramientas-titulo">
+                        Capa base
+                    </div>
+
+                    <div class="capa-selector">
+
+                        <button
+                            id="capa-satelite"
+                            type="button"
+                            class="capa-btn activa"
+                        >
+
+                            <i class="fa-solid fa-satellite"></i>
+                            Satélite
+
+                        </button>
+
+
+                        <button
+                            id="capa-calles"
+                            type="button"
+                            class="capa-btn"
+                        >
+
+                            <i class="fa-solid fa-road"></i>
+                            Calles
+
+                        </button>
+
+                    </div>
+
+
+                    <button
+                        id="btn-tabla"
+                        type="button"
+                        class="btn-tabla-panel"
+                        title="Mostrar tabla de beneficiarios"
+                    >
+
+                        <i class="fa-solid fa-table"></i>
+                        Ver tabla de beneficiarios
+
+                    </button>
+
+                </div>
+
+            </div>
 
 
             <!-- =============================================
