@@ -18,7 +18,7 @@ const GEOJSON_URL = "./modulos.geojson";
 // ------------------------------------------------------------
 
 const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbxIIEraCChdu0Pa9BbTMkMr7H5aTLyd-KJWaCOcS0qztJ5kPAuvjJRdxac5OT3-iyOfDQ/exec";
+    "https://script.google.com/macros/s/AKfycbwgdmAZK-1SsVUi01w1eWlA-amKgyraOPlhuAfKdd8SsTxYPu4MaiaH_rmQJbRwjmIHOw/exec";
 
 
 const MAPA_CENTRO = [
