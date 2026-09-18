@@ -109,20 +109,15 @@ function inicializarMapa() {
     // --------------------------------------------------------
     // SATÉLITE
     // --------------------------------------------------------
-
-    const MAPTILER_KEY = "66uMzDVzttzlPmbt4O6o";
-
-    capaSatelite =
-        L.tileLayer(
-            `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
-            {
-                maxZoom: 22,
     
-                attribution:
-                    '&copy; MapTiler &copy; OpenStreetMap contributors'
-            }
-        );
-
+    const capaSatelite = L.tileLayer(
+        "https://global.imagery.hotosm.org/{z}/{x}/{y}.png",
+        {
+            maxZoom: 22,
+            attribution:
+                '&copy; OpenAerialMap contributors'
+        }
+    );
 
 
     // --------------------------------------------------------
