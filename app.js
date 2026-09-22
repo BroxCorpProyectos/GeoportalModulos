@@ -1360,7 +1360,7 @@ function normalizarEstado(
         )
     ) {
 
-        return "No apto";
+        return "Sin autorización";
 
     }
 
@@ -1371,7 +1371,7 @@ function normalizarEstado(
         )
     ) {
 
-        return "Apto con observaciones";
+        return "En proceso";
 
     }
 
@@ -1382,7 +1382,7 @@ function normalizarEstado(
         )
     ) {
 
-        return "Apto";
+        return "Finalizado";
 
     }
 
@@ -1408,17 +1408,17 @@ function colorEstado(
 
     if (
         normalizado ===
-        "No apto"
+        "Sin autorización"
     ) {
 
-        return "#e53935";
+        return "#78909c";
 
     }
 
 
     if (
         normalizado ===
-        "Apto con observaciones"
+        "En proceso"
     ) {
 
         return "#f9a825";
@@ -1428,7 +1428,7 @@ function colorEstado(
 
     if (
         normalizado ===
-        "Apto"
+        "Finalizado"
     ) {
 
         return "#2e7d32";
@@ -1436,7 +1436,7 @@ function colorEstado(
     }
 
 
-    return "#94a3b8";
+    return "#cbd5e1";
 
 }
 
@@ -1535,18 +1535,6 @@ function crearPopup(
     feature,
     datos
 ) {
-
-    const coordenadas =
-        feature.geometry.coordinates;
-
-
-    const longitud =
-        coordenadas[0];
-
-
-    const latitud =
-        coordenadas[1];
-
 
     const color =
         colorEstado(
@@ -1651,18 +1639,25 @@ function crearPopup(
                 }
 
 
-                <p>
+                ${
+                    datos.observaciones
+                    ?
+                    `
+                    <p>
+                        <strong>
+                            Observaciones:
+                        </strong>
 
-                    <strong>
-                        Coordenadas:
-                    </strong>
+                        <br>
 
-                    <br>
-
-                    ${latitud.toFixed(6)},
-                    ${longitud.toFixed(6)}
-
-                </p>
+                        ${escapeHTML(
+                            datos.observaciones
+                        )}
+                    </p>
+                    `
+                    :
+                    ""
+                }
 
 
                 ${
@@ -1911,6 +1906,26 @@ function mostrarInformacionModulo(
         }
 
 
+        <div class="detalle-item">
+
+            <strong>
+                Coordenadas
+            </strong>
+
+            <div>
+
+                ${
+                    feature.geometry.coordinates[1].toFixed(6)
+                },
+                ${
+                    feature.geometry.coordinates[0].toFixed(6)
+                }
+
+            </div>
+
+        </div>
+
+
         ${
             datos.informe
             ?
@@ -2049,7 +2064,7 @@ function actualizarEstadisticas(
 
 
             if (
-                estado === "Apto"
+                estado === "Finalizado"
             ) {
 
                 aptos++;
@@ -2057,7 +2072,7 @@ function actualizarEstadisticas(
             }
             else if (
                 estado ===
-                "Apto con observaciones"
+                "En proceso"
             ) {
 
                 observaciones++;
@@ -2065,7 +2080,7 @@ function actualizarEstadisticas(
             }
             else if (
                 estado ===
-                "No apto"
+                "Sin autorización"
             ) {
 
                 noAptos++;
