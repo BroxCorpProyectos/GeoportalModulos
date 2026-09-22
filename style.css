@@ -457,8 +457,8 @@ body {
 
 .estadistica-icon.intervenido {
 
-    background: #ffebee;
-    color: #e53935;
+    background: #eceff1;
+    color: #78909c;
 
 }
 
@@ -547,10 +547,18 @@ body {
 }
 
 
+.leyenda-color.gris-oscuro {
+
+    background:
+        #78909c;
+
+}
+
+
 .leyenda-color.gris {
 
     background:
-        #94a3b8;
+        #cbd5e1;
 
 }
 
