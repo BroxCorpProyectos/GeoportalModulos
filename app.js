@@ -1356,7 +1356,7 @@ function normalizarEstado(
 
     if (
         texto.includes(
-            "no apto"
+            "autoriz"
         )
     ) {
 
@@ -1367,7 +1367,7 @@ function normalizarEstado(
 
     if (
         texto.includes(
-            "observ"
+            "proceso"
         )
     ) {
 
@@ -1378,7 +1378,7 @@ function normalizarEstado(
 
     if (
         texto.includes(
-            "apto"
+            "finalizado"
         )
     ) {
 
